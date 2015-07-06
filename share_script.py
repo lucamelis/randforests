@@ -175,7 +175,7 @@ for i in range(0,num_tests):
         test_size = pair_logs.D[pair_logs.D == last_day].shape[0] 
         train_size = n_samples - test_size
 
-        data = encoder.fit_transform( pair_logs[["src_ip","D"]].T.to_dict().values() )
+        data = encoder.fit_transform( pair_logs[["src_ip","target_ip","D"]].T.to_dict().values() )
         
         if do_feat_extraction:
             n_features = 10

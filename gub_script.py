@@ -65,12 +65,12 @@ labeller = preprocessing.LabelEncoder()
 
 
 #time window
-day = dt.datetime(2015,05,17)
-num_tests = 10  
+day = dt.datetime(2015,06,06)
+num_tests = 1
 train_window = 6
 
 names = np.array(["ID","Y","M","D","hh","mm","ss","src_ip","src_prt","target_prt","prot","flag","target_ip"])
-col_idx =[3,7,8,9,12]
+col_idx =[ 3,7,8,9,12 ]
 #training features
 # categorical = ["target_ip","flag", "prot", "src_prt","target_prt"]
 
@@ -79,7 +79,7 @@ label = ["label"]
 
 data_dir = "data/"
 parser_params = { 
-            "nrows": 10000, 
+            "nrows": 2000000, 
             "usecols": col_idx, #range(1,len(names)+1), 
             "names": names[col_idx], 
             "sep": '\t|-|:', 
@@ -95,7 +95,7 @@ forest_params = {
             'n_jobs' : -1,
             }
 
-do_feat_extraction = False
+do_feat_extraction = True
 
 stats_list = [ ]
 
@@ -125,7 +125,7 @@ for i in range(0,num_tests):
     criterion = df_logs['target_ip'].map(lambda x: x in GUB)
     df_logs = df_logs[criterion]
 
-    top_targets = [ k for k,v in Counter( df_logs["target_ip"].to_dense() ).most_common(100) ]
+    top_targets = [ k for k,v in Counter( df_logs[df_logs.D < last_day]["target_ip"].to_dense() ).most_common(100) ]
 
     criterion = df_logs['target_ip'].map(lambda x: x in top_targets)
     df_logs = df_logs[criterion]
@@ -157,7 +157,7 @@ for i in range(0,num_tests):
     data = encoder.fit_transform( df_logs[st_cols[0:3]].T.to_dict().values() )
 
     if do_feat_extraction:
-        n_features = 10
+        n_features = 100
         svd = TruncatedSVD(n_components=n_features, random_state=42)
         #return dense array
         data = svd.fit_transform(data)

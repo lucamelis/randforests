@@ -76,7 +76,7 @@ label = ["label"]
 
 data_dir = "data/"
 parser_params = {
-            "nrows": 2*10**6,
+            "nrows": 2*10**4,
             "usecols": col_idx, #range(1,len(names)+1), 
             "names": names[col_idx], 
             "sep": '\t' 

@@ -3,7 +3,10 @@
 
 from util import *
 
-do_feat_extraction = False
+from itertools import combinations
+import operator
+
+do_feat_extraction = True
 
 stats_list = [ ]
 
@@ -17,7 +20,6 @@ for i in range(0,num_tests):
         df_logs = df_logs.append( pd.read_csv(data_dir + "logs" + cur_day.date().isoformat() + ".txt", **parser_params ), ignore_index=True)
 
     df_logs = cleanData(df_logs)
-
 
     #extract 24/ subnets from IPs
     df_logs.src_ip = df_logs.src_ip.map(lambda x: x[:11])
@@ -88,7 +90,7 @@ for i in range(0,num_tests):
         data = encoder.fit_transform( pair_logs[["src_ip","target_ip","D"]].T.to_dict().values() )
         
         if do_feat_extraction:
-            n_features = 10
+            n_features = int( np.sqrt(data.shape[1]) )
             svd = TruncatedSVD(n_components=n_features, random_state=42)
             #return dense array
             data = svd.fit_transform(data)

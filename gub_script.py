@@ -3,7 +3,7 @@
 
 from util import *
 
-do_feat_extraction = True
+do_feat_extraction = False
 
 stats_list = [ ]
 
@@ -59,7 +59,6 @@ for i in range(0,num_tests):
 
     df_logs = positives_logs.sort("D") 
         
-
     n_samples = df_logs.shape[0]
     print "Dataset size:\t",n_samples
 
@@ -67,13 +66,18 @@ for i in range(0,num_tests):
     test_size = df_logs.D[df_logs.D == last_day].shape[0]
     train_size = n_samples - test_size
 
-    data = encoder.fit_transform( df_logs[st_cols[0:3]].T.to_dict().values() )
+    print "Bloom filtering.."
+    data = toBloomfeatures( df_logs[st_cols[0:2]] )
+    data = np.hstack( (data, df_logs[st_cols[3]].as_matrix().reshape(n_samples,1) ) ) 
+    print "feature space size", data.shape[1]
 
-    if do_feat_extraction:
-        n_features = 100
-        svd = TruncatedSVD(n_components=n_features, random_state=42)
-        #return dense array
-        data = svd.fit_transform(data)
+    # if do_feat_extraction:
+    #     # data = encoder.fit_transform( df_logs[st_cols[0:3]].T.to_dict().values() )
+    #     n_features = 3000 #int( np.sqrt(data.shape[1]) )
+    #     svd = TruncatedSVD(n_components=n_features, random_state=42)
+    #     #return dense array
+    #     data = svd.fit_transform(data)
+    #     print "std", data.std()**2
 
     # target_data = np.hstack( list([labeller.fit_transform( df_logs[label].to_dense() ).reshape(n_samples,1)  for label in labels] ) )
     # if len(labels)==1:

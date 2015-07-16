@@ -61,13 +61,11 @@ for i in range(0,num_tests):
         positives_logs = positives_logs.append( negatives_logs[negatives_logs.D == i].sample(frac=0.20) , ignore_index=True)
 
     df_logs = positives_logs.sort("D") 
-        
-    
+            
     for target in top_targets:
 
         #single victim logs (no sharing)
         target_logs = df_logs[df_logs.target_ip == target]
-
 
         n_samples = target_logs.shape[0]
         print "Victim Dataset size:\t",n_samples
@@ -77,6 +75,11 @@ for i in range(0,num_tests):
         train_size = n_samples - test_size
 
         data = encoder.fit_transform( target_logs[["src_ip","D"]].T.to_dict().values() )
+
+        print "Bloom filtering.."
+        data = toBloomfeatures( target_logs[st_cols[0:2]] )
+        data = np.hstack( (data, target_logs[st_cols[3]].as_matrix().reshape(n_samples,1) ) ) 
+        print "feature space size", data.shape[1]
         
         if do_feat_extraction:
             n_features = int( np.sqrt(data.shape[1]) )
@@ -98,12 +101,20 @@ for i in range(0,num_tests):
 
         forest = ensemble.RandomForestClassifier( **forest_params )
         forest = forest.fit( X_train, Y_train )
-
+        
+        Y_train = forest.predict(X_train)
         Y_pred = forest.predict(X_test)
                     
         stats = getPrediction(Y_pred, Y_test)
         stats["D"] = max_day   
         stats["target"] = target
+        
+        stats["blacklist"] = set( target_logs.src_ip[:train_size][Y_train == 1] )
+        stats["attacks"] = set( target_logs.src_ip[X_train.shape[0]:][Y_test == 1] )
+        if ( len( stats["attacks"] ) > 0): 
+            stats["ratioTP"] = len( stats["blacklist"] & stats["attacks"] ) / float(len( stats["attacks"] ) )  
+            stats["ratioFP"] = len( stats["blacklist"] - stats["attacks"] ) / float(len( stats["attacks"] ) )  
+        
         stats_list.append(stats)
 
 df_stats = pd.DataFrame(stats_list)

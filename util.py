@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import scipy as sp
 import pandas as pd
@@ -9,14 +12,37 @@ from collections import Counter
 from sklearn import ensemble, feature_extraction, preprocessing, cross_validation, metrics
 from sklearn.decomposition import TruncatedSVD
 
+from pybloom import BloomFilter
+
+from joblib import Parallel, delayed  
+import multiprocessing
+
+def feedBloom(row):
+    f = BloomFilter(**bloom_params)
+    f.add(row.src_ip) 
+    f.add(row.target_ip)
+    return np.array( f.bitarray.tolist(), dtype=np.int8 )
+
+def toBloomfeatures(df):
+    num_cores = multiprocessing.cpu_count()            
+    data = Parallel(n_jobs=num_cores)( delayed(feedBloom)(row) for _, row in df.iterrows() )  
+    return data    
+
 def getPrediction(pred, true):
-    test_size = float(true.shape[0])
+    n_attacks = float( sum( true == 1 ) )
+    n_not_attacks = float( sum( true == 0 ) )    
     d = {}
-    d["tp"] = sum( (pred == 1) & (true==1) )/test_size
-    d["fp"] = sum( (pred == 1) & (true==0) )/test_size
-    d["tn"] = sum( (pred == 0) & (true==0) )/test_size
-    d["fn"] = sum( (pred == 0) & (true==1) )/test_size
-    d["support"] = test_size
+    d["tp"] = sum( (pred == 1) & (true==1) )
+    d["fp"] = sum( (pred == 1) & (true==0) )
+    
+    d["tn"] = sum( (pred == 0) & (true==0) ) 
+    d["fn"] = sum( (pred == 0) & (true==1) )
+ 
+    d["pred"] = pred
+    d["true"] = true
+
+    d["n_attacks"] = n_attacks
+    d["n_not_attacks"] = n_not_attacks
 
     return d
 
@@ -62,8 +88,8 @@ encoder = feature_extraction.DictVectorizer()
 labeller = preprocessing.LabelEncoder()
 
 #time window
-day = dt.datetime(2015,06,06)
-num_tests = 1
+day = dt.datetime(2015,05,17)
+num_tests = 10
 train_window = 6
 
 names = np.array(["ID","D","time","src_ip","src_prt","target_prt","prot","flag","target_ip"])
@@ -76,12 +102,11 @@ label = ["label"]
 
 data_dir = "data/"
 parser_params = {
-            "nrows": 2*10**4,
+            "nrows": 2*10**6,
             "usecols": col_idx, #range(1,len(names)+1), 
             "names": names[col_idx], 
             "sep": '\t' 
             }
-
 
 forest_params = { 
             'max_depth' : None,
@@ -90,3 +115,8 @@ forest_params = {
             'n_estimators' : 100, 
             'n_jobs' : -1,
             }
+
+bloom_params = {
+    'capacity': 500,
+    'error_rate': 0.5
+}

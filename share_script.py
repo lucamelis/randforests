@@ -53,6 +53,7 @@ for i in range(0,num_tests):
 
     #assinging labels to attacks/not attacks
     grouped = df_logs.groupby( st_cols[0:2] )
+    
     # attacks
     positives_logs = pd.DataFrame(
         [ [k[0],k[1],s,1] for k,v in grouped["D"] for s in set(np.unique(v)) ], columns = st_cols)
@@ -74,10 +75,16 @@ for i in range(0,num_tests):
         dictionary[pair] = len(A & B)
     
     contrib_sorted = sorted(dictionary.items(), key=operator.itemgetter(1), reverse=True)
+    
+    collaborator_dict = {}
+    for i in top_targets:
+        s = [target[1] for target,numb in contrib_sorted[0:50] if target[0] == i]
+        if len(s) > 0:
+            collaborator_dict[i] = s
 
-    for pair,n_contrib in contrib_sorted[0:50]:  
-        
-        criterion = df_logs["target_ip"].map(lambda x: x in pair)
+    # for pair,n_contrib in contrib_sorted[0:50]:  
+    for collaborator in collaborator_dict:        
+        criterion = df_logs["target_ip"].map(lambda x: x in collaborator_dict[collaborator])
         pair_logs = df_logs[criterion] 
         
         n_samples = pair_logs.shape[0]
@@ -87,7 +94,7 @@ for i in range(0,num_tests):
         test_size = pair_logs.D[pair_logs.D == last_day].shape[0] 
         train_size = n_samples - test_size
 
-        data = encoder.fit_transform( pair_logs[["src_ip","target_ip","D"]].T.to_dict().values() )
+        data = encoder.fit_transform( pair_logs[["src_ip","D"]].T.to_dict().values() )
         
         if do_feat_extraction:
             n_features = int( np.sqrt(data.shape[1]) )
@@ -114,10 +121,10 @@ for i in range(0,num_tests):
                     
         stats = getPrediction(Y_pred, Y_test)
         stats["D"] = max_day   
-        stats["buddy1"] = pair[0]
-        stats["buddy2"] = pair[1]
-        stats["inter_size"] = n_contrib
+        stats["buddy"] = collaborator
+        # stats["buddy2"] = pair[1]
+        # stats["inter_size"] = n_contrib
         stats_list.append(stats)
 
 df_stats = pd.DataFrame(stats_list)
-df_stats.to_pickle("share100.pkl")
+df_stats.to_pickle("share100new.pkl")

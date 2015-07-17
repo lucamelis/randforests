@@ -20,6 +20,8 @@ import multiprocessing
 def feedBloom(row):
     f = BloomFilter(**bloom_params)
     f.add(row.src_ip) 
+    f.add(row.src_ip[0:5])
+    f.add(row.src_ip[5:8])
     f.add(row.target_ip)
     return np.array( f.bitarray.tolist(), dtype=np.int8 )
 

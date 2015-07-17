@@ -78,7 +78,7 @@ for i in range(0,num_tests):
 
         print "Bloom filtering.."
         data = toBloomfeatures( target_logs[ st_cols[0:2] ] )
-        data = np.hstack( (data, target_logs[ "D" ].as_matrix().reshape(n_samples,1) ) ) 
+        data = np.hstack( (data, target_logs["D"].as_matrix().reshape(n_samples,1) ) ) 
         print "Feature space size:", data.shape[1]
         
         if do_feat_extraction:

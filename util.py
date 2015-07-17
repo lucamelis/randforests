@@ -89,7 +89,7 @@ labeller = preprocessing.LabelEncoder()
 
 #time window
 day = dt.datetime(2015,05,17)
-num_tests = 1
+num_tests = 10
 train_window = 6
 
 names = np.array(["ID","D","time","src_ip","src_prt","target_prt","prot","flag","target_ip"])

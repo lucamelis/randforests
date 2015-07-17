@@ -77,18 +77,18 @@ for i in range(0,num_tests):
         data = encoder.fit_transform( target_logs[["src_ip","D"]].T.to_dict().values() )
 
         print "Bloom filtering.."
-        data = toBloomfeatures( target_logs[st_cols[0:2]] )
-        data = np.hstack( (data, target_logs[st_cols[3]].as_matrix().reshape(n_samples,1) ) ) 
-        print "feature space size", data.shape[1]
+        data = toBloomfeatures( target_logs[ st_cols[0:2] ] )
+        data = np.hstack( (data, target_logs[ "D" ].as_matrix().reshape(n_samples,1) ) ) 
+        print "Feature space size:", data.shape[1]
         
         if do_feat_extraction:
             n_features = int( np.sqrt(data.shape[1]) )
             svd = TruncatedSVD(n_components=n_features, random_state=42)
             #return dense array
             data = svd.fit_transform(data)
+            # scaling data (mean=0, var=1)
+            # data = preprocessing.scale(data)
 
-        # scaling data (mean=0, var=1)
-        # data = preprocessing.scale(data)
 
         target_data = labeller.fit_transform( target_logs["label"].to_dense() ).reshape(n_samples,1).ravel()
 

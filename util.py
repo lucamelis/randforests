@@ -17,8 +17,8 @@ from pybloom import BloomFilter
 from joblib import Parallel, delayed  
 import multiprocessing
 
-def feedBloom(row):
-    f = BloomFilter(**bloom_params)
+def feedBloom(row,cap):
+    f = BloomFilter(capacity = cap , error_rate = 0.7)
     f.add(row.src_ip) 
     f.add(row.src_ip[0:5])
     f.add(row.src_ip[5:8])
@@ -26,8 +26,9 @@ def feedBloom(row):
     return np.array( f.bitarray.tolist(), dtype=np.int8 )
 
 def toBloomfeatures(df):
-    num_cores = multiprocessing.cpu_count()            
-    data = Parallel(n_jobs=num_cores)( delayed(feedBloom)(row) for _, row in df.iterrows() )  
+    num_cores = multiprocessing.cpu_count()
+    ip_space = len( set(df.src_ip) )            
+    data = Parallel(n_jobs=num_cores)( delayed(feedBloom)(row,ip_space) for _, row in df.iterrows() )  
     return data    
 
 def getPrediction(pred, true):
@@ -69,15 +70,16 @@ def cleanData(data):
                   "245","246","247","248","249","250","251","252","253","254","255"]
 
     ip_pattern = "^\d{3}.\d{3}.\d{3}.\d{3}$"
-    criterion = data['src_ip'].map(lambda x: re.match(ip_pattern,x) is not None )  
+    criterion = data['src_ip'].map( lambda x: re.match(ip_pattern,x) is not None )  
     data = data[criterion]
 
-    criterion = data['src_ip'].map(lambda x: np.logical_not( (x[0:7] in ip_private_6) )  )
+    criterion = data['src_ip'].map( lambda x: np.logical_not( (x[0:7] in ip_private_6) ) )
     data = data[criterion]
 
-    data.D = data.D.map(lambda x: np.int( x.split("-")[-1] ) )
+    #map to python dates objects
+    data.D = data.D.map( lambda x: dt.date(*[ np.int(i) for i in x.split("-") ] ) )
 
-    criterion = data['src_ip'].map(lambda x: np.logical_not( (x[0:3] in ip_private) )  )
+    criterion = data['src_ip'].map( lambda x: np.logical_not( (x[0:3] in ip_private) ) )
     data = data[criterion]
 
     return data
@@ -86,12 +88,41 @@ def timeToSeconds(date):
     timesince = dt.datetime(*date) - dt.datetime(*date[0:3])
     return int(timesince.total_seconds())
 
+def loadData(start_day,params):
+    
+    df_logs = pd.DataFrame([ ], columns=names[col_idx] )
+    
+    for j in range(0, train_window):
+        cur_day = start_day + dt.timedelta(days=j)
+        print cur_day.date().isoformat()
+        df_logs = df_logs.append( 
+            pd.read_csv( data_dir + "logs" + cur_day.date().isoformat() + ".txt", **params ), 
+            ignore_index=True 
+            )
+
+    df_logs = cleanData(df_logs)
+
+    days = np.unique(df_logs['D'])
+    last_day = np.max(days)
+    
+    GUB_targets = set(df_logs[df_logs.D < last_day]["target_ip"]) & set(df_logs[df_logs.D == last_day]["target_ip"])
+    criterion = df_logs['target_ip'].map(lambda x: x in GUB_targets)
+    df_logs = df_logs[criterion]
+
+    top_targets = [ k for k,v in Counter( df_logs[df_logs.D < last_day]["target_ip"].to_dense() ).most_common(100) ]
+    
+    criterion = df_logs['target_ip'].map(lambda x: x in top_targets)
+    df_logs = df_logs[criterion]
+
+    return df_logs    
+
+
 encoder = feature_extraction.DictVectorizer()
 labeller = preprocessing.LabelEncoder()
 
 #time window
 day = dt.datetime(2015,05,17)
-num_tests = 10
+num_tests = 1
 train_window = 6
 
 names = np.array(["ID","D","time","src_ip","src_prt","target_prt","prot","flag","target_ip"])
@@ -104,7 +135,7 @@ label = ["label"]
 
 data_dir = "data/"
 parser_params = {
-            "nrows": 2*10**6,
+            "nrows": 2*10**3,
             "usecols": col_idx, #range(1,len(names)+1), 
             "names": names[col_idx], 
             "sep": '\t' 
@@ -117,8 +148,3 @@ forest_params = {
             'n_estimators' : 100, 
             'n_jobs' : -1,
             }
-
-bloom_params = {
-    'capacity': 500,
-    'error_rate': 0.5
-}

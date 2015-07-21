@@ -9,14 +9,10 @@ stats_list = [ ]
 
 for i in range(0,num_tests):
     start_day = day + dt.timedelta(days=i)
-    df_logs = pd.read_csv(data_dir + "logs"+ start_day.date().isoformat()+".txt", **parser_params )
-    print start_day.date().isoformat()
-    for i in range(1, train_window):
-        cur_day = start_day + dt.timedelta(days=i)
-        print cur_day.date().isoformat()
-        df_logs = df_logs.append( pd.read_csv(data_dir + "logs" + cur_day.date().isoformat() + ".txt", **parser_params ), ignore_index=True)
-
-    df_logs = cleanData(df_logs)
+    # df_logs = pd.read_csv(data_dir + "logs"+ start_day.date().isoformat()+".txt", **parser_params )
+    # print start_day.date().isoformat()
+    
+    df_logs = loadData(start_day)
 
     #extract 24/ subnets from IPs
     days = np.unique(df_logs['D'])
@@ -37,7 +33,6 @@ for i in range(0,num_tests):
     criterion = df_logs['target_ip'].map(lambda x: x in GUB_targets)
     df_logs = df_logs[criterion]
 
-
     top_targets = [ k for k,v in Counter( df_logs[df_logs.D < last_day]["target_ip"].to_dense() ).most_common(100) ]
 
     criterion = df_logs['target_ip'].map(lambda x: x in top_targets)
@@ -55,7 +50,8 @@ for i in range(0,num_tests):
     
     #not-attacks equal-size sampling for each day 
     for i in days:
-        positives_logs = positives_logs.append( negatives_logs[negatives_logs.D == i].sample(frac=0.20) , ignore_index=True)
+        day_logs = positives_logs[positives_logs.D == i].shape[0]
+        positives_logs = positives_logs.append( negatives_logs[negatives_logs.D == i].sample(frac=day_logs) , ignore_index=True)
 
     df_logs = positives_logs.sort("D") 
         
@@ -110,7 +106,7 @@ for i in range(0,num_tests):
         stats["D"] = max_day 
         stats["target"] = target
         stats_list.append(stats)
-
+        
     report = metrics.classification_report(Y_test, Y_pred ).splitlines()
 
 df_stats = pd.DataFrame(stats_list)

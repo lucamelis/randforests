@@ -10,7 +10,6 @@ import re
 from collections import Counter
 
 from sklearn import ensemble, feature_extraction, preprocessing, cross_validation, metrics
-from sklearn.decomposition import TruncatedSVD
 
 from pybloom import BloomFilter
 
@@ -18,12 +17,12 @@ from joblib import Parallel, delayed
 import multiprocessing
 
 def feedBloom(row,cap):
-    f = BloomFilter(capacity = cap , error_rate = 0.7)
+    f = BloomFilter(capacity = 200 , error_rate = 0.7)
     f.add(row.src_ip) 
     f.add(row.src_ip[0:5])
     f.add(row.src_ip[5:8])
     f.add(row.target_ip)
-    return np.array( f.bitarray.tolist(), dtype=np.int8 )
+    return np.array( [ np.int(i) for i in f.bitarray ] )
 
 def toBloomfeatures(df):
     num_cores = multiprocessing.cpu_count()
@@ -31,21 +30,17 @@ def toBloomfeatures(df):
     data = Parallel(n_jobs=num_cores)( delayed(feedBloom)(row,ip_space) for _, row in df.iterrows() )  
     return data    
 
-def getPrediction(pred, true):
-    n_attacks = float( sum( true == 1 ) )
-    n_not_attacks = float( sum( true == 0 ) )    
+def getPrediction(blacklist, whitelist, ground_truth):
     d = {}
-    d["tp"] = sum( (pred == 1) & (true==1) )
-    d["fp"] = sum( (pred == 1) & (true==0) )
+    d["tp"] = len( blacklist & ground_truth )
+    d["fp"] = len( blacklist - ground_truth )
     
-    d["tn"] = sum( (pred == 0) & (true==0) ) 
-    d["fn"] = sum( (pred == 0) & (true==1) )   
+    d["fn"] = len( whitelist & ground_truth )  
+    d["tn"] = len( whitelist - ground_truth )
  
-    d["pred"] = pred
-    d["true"] = true
-
-    d["n_attacks"] = n_attacks
-    d["n_not_attacks"] = n_not_attacks
+    d["len_whitelist"] = len(whitelist)
+    d["len_blacklist"] = len(blacklist)
+    d["n_attacks"] = len(ground_truth)
 
     return d
 
@@ -122,7 +117,7 @@ labeller = preprocessing.LabelEncoder()
 
 #time window
 day = dt.datetime(2015,05,17)
-num_tests = 2
+num_tests = 1
 train_window = 6
 
 names = np.array(["ID","D","time","src_ip","src_prt","target_prt","prot","flag","target_ip"])
@@ -135,7 +130,7 @@ label = ["label"]
 
 data_dir = "data/"
 parser_params = {
-            "nrows": 2*10**3,
+            "nrows": 2*10**5,
             "usecols": col_idx, #range(1,len(names)+1), 
             "names": names[col_idx], 
             "sep": '\t' 

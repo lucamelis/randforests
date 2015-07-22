@@ -47,7 +47,16 @@ for i in range(0,num_tests):
     for target in top_targets:
 
         #single victim logs (no sharing)
-        target_logs = df_logs[df_logs.target_ip == target]
+        target_logs = df_logs[df_logs.target_ip == target]        
+        
+        train_logs = target_logs[target_logs.D < last_day]
+        test_attackers = set( target_logs[(target_logs.D == last_day) & (target_logs.label == 1)].src_ip.to_dense() )  
+
+        train_src_ips = np.unique( target_logs[ (target_logs.D < last_day) & (target_logs.label == 1) ].src_ip )
+
+        test_logs = pd.DataFrame([ [src_ip, target, last_day, 1 ] for src_ip in train_src_ips ], columns = st_cols)
+
+        target_logs = train_logs.append(test_logs, ignore_index=True)
 
         n_samples = target_logs.shape[0]
         print "Victim Dataset size:\t",n_samples
@@ -63,14 +72,6 @@ for i in range(0,num_tests):
         data = np.hstack( (data, time_feat.as_matrix().reshape(n_samples,1) ) ) 
         print "Feature space size:", data.shape[1]
         
-        # if do_feat_extraction:
-        #     n_features = int( np.sqrt(data.shape[1]) )
-        #     svd = TruncatedSVD(n_components=n_features, random_state=42)
-        #     #return dense array
-        #     data = svd.fit_transform(data)
-        #     # scaling data (mean=0, var=1)
-        #     # data = preprocessing.scale(data)
-
         target_data = labeller.fit_transform( target_logs["label"].to_dense() ).reshape(n_samples,1).ravel()
 
         #train/test split
@@ -85,17 +86,20 @@ for i in range(0,num_tests):
         
         Y_train = forest.predict(X_train)
         Y_pred = forest.predict(X_test)
-                    
-        stats = getPrediction(Y_pred, Y_test)
+              
+        blacklist = set( target_logs.src_ip[X_train.shape[0]:][Y_pred == 1] )
+        whitelist = set( target_logs.src_ip[X_train.shape[0]:][Y_pred == 0] )
+        
+        stats = getPrediction( blacklist, whitelist, test_attackers )
+        
         stats["D"] = last_day   
-        stats["target"] = target
+        stats["target"] = target        
+
+        stats["whitelist"] = whitelist
+        stats["blacklist"] = blacklist
+        stats["attacks"] = test_attackers
         
-        stats["blacklist"] = set( target_logs.src_ip[:train_size][Y_train == 1] )
-        stats["attacks"] = set( target_logs.src_ip[X_train.shape[0]:][Y_test == 1] )
-        # if ( len( stats["attacks"] ) > 0): 
-        #     stats["ratioTP"] = len( stats["blacklist"] & stats["attacks"] ) / float(len( stats["attacks"] ) )  
-        #     stats["ratioFP"] = len( stats["blacklist"] - stats["attacks"] ) / float(len( stats["attacks"] ) )  
-        
+                
         stats_list.append(stats)
         del forest
 

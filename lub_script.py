@@ -14,11 +14,14 @@ for i in range(0,num_tests):
     
     st_cols = ['src_ip','target_ip','D',"label"]
     
-    df_logs = loadData(start_day)
+    df_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
+    print "..predicting ",start_day.date().isoformat() 
+    
+    # df_logs = loadData(start_day, parser_params)
     
     #extract 24/ subnets from IPs
     df_logs.src_ip = df_logs.src_ip.map(lambda x: x[:11])
-    
+
     top_targets = np.unique( df_logs["target_ip"] )
 
     days = np.unique(df_logs['D'])
@@ -26,16 +29,18 @@ for i in range(0,num_tests):
 
     #assinging labels to attacks/not attacks
     grouped = df_logs.groupby( st_cols[0:2] )
+
     # attacks
     positives_logs = pd.DataFrame(
-        [ [k[0],k[1],s,1] for k,v in grouped["D"] for s in set(np.unique(v)) ], columns = st_cols)
+        [ [k[0], k[1], s, 1] for k,v in grouped["D"] for s in set(np.unique(v)) ], columns = st_cols)
     #not attacks
     negatives_logs = pd.DataFrame(
-        [ [k[0],k[1],s,0] for k,v in grouped["D"] for s in set(days) - set(np.unique(v)) ], columns = st_cols)
+        [ [k[0], k[1], s, 0] for k,v in grouped["D"] for s in set(days) - set(np.unique(v)) ], columns = st_cols)
     
     #not-attacks equal-size sampling for each day 
     for i in days:
-        positives_logs = positives_logs.append( negatives_logs[negatives_logs.D == i].sample(frac=0.20) , ignore_index=True)
+        day_logs = positives_logs[positives_logs.D == i].shape[0]
+        positives_logs = positives_logs.append( negatives_logs[negatives_logs.D == i].sample(n=day_logs) , ignore_index=True)
 
     df_logs = positives_logs.sort("D") 
             
@@ -51,7 +56,8 @@ for i in range(0,num_tests):
         test_size = target_logs.D[target_logs.D == last_day].shape[0] 
         train_size = n_samples - test_size
 
-        time_feat = target_logs['D'].map(lambda x: ( x - first_day ).days )
+        time_feat = target_logs['D'].map( lambda x: ( x - first_day ).days )
+
         print "Bloom filtering.."
         data = toBloomfeatures( target_logs[ st_cols[0:2] ] )
         data = np.hstack( (data, time_feat.as_matrix().reshape(n_samples,1) ) ) 
@@ -64,7 +70,6 @@ for i in range(0,num_tests):
         #     data = svd.fit_transform(data)
         #     # scaling data (mean=0, var=1)
         #     # data = preprocessing.scale(data)
-
 
         target_data = labeller.fit_transform( target_logs["label"].to_dense() ).reshape(n_samples,1).ravel()
 

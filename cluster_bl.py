@@ -5,6 +5,7 @@ from util import *
 from itertools import combinations
 
 from sklearn.cluster import KMeans
+from scipy.stats import itemfreq
 
 
 do_feat_extraction = False
@@ -52,8 +53,20 @@ for i in range(0,num_tests):
     for subset in clusters:
         criterion = df_logs.target_ip.map(lambda x: x in subset)
         logs = df_logs[criterion]
-        
-        df_gr = df_logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"] ) )
+
+
+        attackers = np.unique(logs["src_ip"])
+
+        ind_ips = dict( zip(attackers, range(attackers.size) ) )
+        logs.src_ip = logs.src_ip.map(lambda x : ind_ips[x])
+
+        df_gr = logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"], minlength=attackers.size) )
+
+        ip2ip = np.zeros(attackers.size**2 )
+        for k,v in df_gr.itemfreq():
+            ip2ip += [min(i) for i in product(v,v)]
+
+        ip2ip = ip2ip.reshape(attackers.size,-1)
 
 
     for target in top_targets:    

@@ -44,8 +44,7 @@ for i in range(0,num_tests):
     n_clusters = 10
     estimator = KMeans(n_clusters=n_clusters)
     
-    estimator.fit(X)
-    labels = estimator.labels_
+    labels = estimator.fit(X).labels_ 
     
     clusters = [ top_targets[labels == i] for i in range(n_clusters) ]
 
@@ -54,7 +53,7 @@ for i in range(0,num_tests):
         criterion = df_logs.target_ip.map(lambda x: x in subset)
         logs = df_logs[criterion]
         
-        df_gr = df_logs.groupby( ["target_ip","D"] ).apply(lambda x: np.unique(x["src_ip"] ) )
+        df_gr = df_logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"] ) )
 
 
     for target in top_targets:    

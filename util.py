@@ -102,7 +102,7 @@ def loadData(start_day,params):
             pd.read_csv( data_dir + "logs" + cur_day.date().isoformat() + ".txt", **params ), 
             ignore_index=True 
             )
-        targets[j] = set(df_logs["target_ip"]) 
+        targets.append( set(df_logs["target_ip"]) ) 
 
     best_targets = targets[0]    
     for j in range(1, train_window):

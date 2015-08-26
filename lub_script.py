@@ -14,10 +14,10 @@ for i in range(0,num_tests):
     
     st_cols = ['src_ip','target_ip','D',"label"]
     
-    df_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
-    print "..predicting ",start_day.date().isoformat() 
+    # df_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
+    # print "..predicting ",start_day.date().isoformat() 
     
-    # df_logs = loadData(start_day, parser_params)
+    df_logs = loadData(start_day, parser_params)
     
     #extract 24/ subnets from IPs
     df_logs.src_ip = df_logs.src_ip.map(lambda x: x[:11])
@@ -69,23 +69,23 @@ for i in range(0,num_tests):
 
         print "Bloom filtering.."
         data = toBloomfeatures( target_logs[ st_cols[0:2] ] )
-        data = np.hstack( (data, time_feat.as_matrix().reshape(n_samples,1) ) ) 
+        data = sparse.hstack( (data, time_feat.as_matrix().reshape(n_samples,1) ) ) 
         print "Feature space size:", data.shape[1]
-        
         target_data = labeller.fit_transform( target_logs["label"].to_dense() ).reshape(n_samples,1).ravel()
 
         #train/test split
-        X_train, Y_train = data[:train_size], target_data[:train_size]
-        X_test, Y_test = data[X_train.shape[0]:], target_data[X_train.shape[0]:]
+        X_train, Y_train = data.A[:train_size], target_data[:train_size]
+        X_test, Y_test = data.A[X_train.shape[0]:], target_data[X_train.shape[0]:]
 
         print "Train size:\t", X_train.shape[0]
         print "Test size:\t", X_test.shape[0]
 
-        forest = ensemble.RandomForestClassifier( **forest_params )
+        forest = ensemble.RandomForestRegressor( **forest_params )
         forest = forest.fit( X_train, Y_train )
         
-        Y_train = forest.predict(X_train)
-        Y_pred = forest.predict(X_test)
+        Y_train = np.round( forest.predict(X_train) )
+
+        Y_pred = np.round( forest.predict(X_test) )
               
         blacklist = set( target_logs.src_ip[X_train.shape[0]:][Y_pred == 1] )
         whitelist = set( target_logs.src_ip[X_train.shape[0]:][Y_pred == 0] )
@@ -102,6 +102,8 @@ for i in range(0,num_tests):
                 
         stats_list.append(stats)
         del forest
+        del target_logs
+        del data
 
 df_stats = pd.DataFrame(stats_list)
 df_stats.to_pickle("lub100.pkl")

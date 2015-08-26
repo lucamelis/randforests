@@ -3,6 +3,8 @@
 
 import numpy as np
 import scipy as sp
+from scipy import sparse
+
 import pandas as pd
 
 import datetime as dt
@@ -16,21 +18,26 @@ from pybloom import BloomFilter
 from joblib import Parallel, delayed  
 import multiprocessing
 
-def feedBloom(row,cap):
-    f = BloomFilter(capacity = 200 , error_rate = 0.7)
+def feedBloom(row):
+    f = BloomFilter(capacity = 200 , error_rate = 0.6)
     f.add(row.src_ip) 
     f.add(row.src_ip[0:5])
     f.add(row.src_ip[5:8])
     f.add(row.target_ip)
-    return np.array( [ np.int(i) for i in f.bitarray ] )
+    return np.array(f.bitarray.tolist(),dtype=np.int)
 
 def toBloomfeatures(df):
     num_cores = multiprocessing.cpu_count()
     ip_space = len( set(df.src_ip) )            
-    data = Parallel(n_jobs=num_cores)( delayed(feedBloom)(row,ip_space) for _, row in df.iterrows() )  
+    data = sparse.csr_matrix( Parallel(n_jobs=num_cores)( delayed(feedBloom)(row,ip_space) for _, row in df.iterrows() ) ) 
     return data    
 
 def getPrediction(blacklist, whitelist, ground_truth):
+    
+    assert typeof(blacklist) is set
+    assert typeof(whitelist) is set
+    assert typeof(ground_truth) is set
+
     d = {}
     d["tp"] = len( blacklist & ground_truth )
     d["fp"] = len( blacklist - ground_truth )
@@ -87,6 +94,7 @@ def loadData(start_day,params):
     
     df_logs = pd.DataFrame([ ], columns=names[col_idx] )
     
+    targets = []
     for j in range(0, train_window):
         cur_day = start_day + dt.timedelta(days=j)
         print cur_day.date().isoformat()
@@ -94,15 +102,24 @@ def loadData(start_day,params):
             pd.read_csv( data_dir + "logs" + cur_day.date().isoformat() + ".txt", **params ), 
             ignore_index=True 
             )
+        targets[j] = set(df_logs["target_ip"]) 
+
+    best_targets = targets[0]    
+    for j in range(1, train_window):
+        best_targets = best_targets & targets[j] 
 
     df_logs = cleanData(df_logs)
 
     days = np.unique(df_logs['D'])
     last_day = np.max(days)
     
-    GUB_targets = set(df_logs[df_logs.D < last_day]["target_ip"]) & set(df_logs[df_logs.D == last_day]["target_ip"])
-    criterion = df_logs['target_ip'].map(lambda x: x in GUB_targets)
+    # GUB_targets = set(df_logs[df_logs.D < last_day]["target_ip"]) & set(df_logs[df_logs.D == last_day]["target_ip"])
+    criterion = df_logs['target_ip'].map(lambda x: x in best_targets)
     df_logs = df_logs[criterion]
+
+    # GUB_targets = set(df_logs[df_logs.D < last_day]["target_ip"]) & set(df_logs[df_logs.D == last_day]["target_ip"])
+    # criterion = df_logs['target_ip'].map(lambda x: x in GUB_targets)
+    # df_logs = df_logs[criterion]
 
     top_targets = [ k for k,v in Counter( df_logs[df_logs.D < last_day]["target_ip"].to_dense() ).most_common(100) ]
     
@@ -139,7 +156,7 @@ parser_params = {
 forest_params = { 
             'max_depth' : None,
             'min_samples_split' : 2,
-            'criterion': 'entropy',
+            'criterion': 'mse',
             'n_estimators' : 100, 
             'n_jobs' : -1,
             }

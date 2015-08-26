@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+#comment
 from util import *
 
 do_feat_extraction = False

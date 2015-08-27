@@ -31,29 +31,33 @@ for i in range(0,num_tests):
 
     ind_dic = dict( zip(top_targets, range(top_targets.size) ) )
 
-    obs_mat = np.zeros((days.size, top_targets.size, top_targets.size))
+    obs_mat = np.zeros((top_targets.size, top_targets.size, days.size))
 
     for pair in target_pairs:
         for day in days:
-            obs_mat[day,ind_dic[pair[0]],ind_dic[pair[1]]] = len( set( df_logs[df.logs.target_ip == k && df.logs.D == day].src_ip) 
+            obs_mat[ind_dic[pair[0]],ind_dic[pair[1]], day] = len( set( df_logs[df.logs.target_ip == k && df.logs.D == day].src_ip) 
                      & set( df_logs[df.logs.target_ip == v && df.logs.D == day].src_ip) )
-            obs_mat[day,ind_dic[pair[1]],ind_dic[pair[0]]] = obs_mat[day, ind_dic[pair[0]], ind_dic[pair[1]]]        
+            obs_mat[ind_dic[pair[1]],ind_dic[pair[0]], day] = obs_mat[ind_dic[pair[0]], ind_dic[pair[1]], day]        
 
 
-    X = obs_mat.reshape(top_targets.size, top_targets.size * days.size)
+    # X = obs_mat.(top_targets.size, top_targets.size * days.size )
 
+    ##O2O clustering: kmeans, DBSCAN, KNN
+    ## play with n_clusters parameter
     n_clusters = 10
     estimator = KMeans(n_clusters=n_clusters)
     
-    labels = estimator.fit(X).labels_ 
+    labels = estimator.fit( obs_mat.sum(axis=2) ).labels_ 
     
     clusters = [ top_targets[labels == i] for i in range(n_clusters) ]
 
+    topIP_clusters = []
+    kNN_alg = ['auto', 'ball_tree', 'kd_tree', 'brute']
+    NN_IPs = 2
 
     for subset in clusters:
         criterion = df_logs.target_ip.map(lambda x: x in subset)
         logs = df_logs[criterion]
-
 
         attackers = np.unique(logs["src_ip"])
 
@@ -62,12 +66,16 @@ for i in range(0,num_tests):
 
         df_gr = logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"], minlength=attackers.size) )
 
-        ip2ip = np.zeros(attackers.size**2 )
+        IP_IP = np.zeros(attackers.size**2 )
         for k,v in df_gr.itemfreq():
-            ip2ip += [min(i) for i in product(v,v)]
+            IP_IP += [min(i) for i in product(v,v)]
 
-        ip2ip = ip2ip.reshape(attackers.size,-1)
+        IP_IP = IP_IP.reshape(attackers.size,-1)
 
+        nbrs = NearestNeighbors(n_neighbors= NN_IPs, algorithm= kNN_alg[1] ).fit( IP_IP )
+        _, indices = nbrs.kneighbors(IP_IP)
+
+        np.append(topIP_clusters, attackers[indices] )       
 
     for target in top_targets:    
         stats = getPrediction( blacklist, whitelist, test_attackers[target] )

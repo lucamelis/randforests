@@ -14,6 +14,8 @@ stats_list = [ ]
 
 for i in range(0,num_tests):
     start_day = day + dt.timedelta(days=i)
+    df_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
+
     # df_logs = loadData(start_day, parser_params)
     
     # df_logs = pd.read_csv(data_dir + "logs"+ start_day.date().isoformat()+".txt", **parser_params )
@@ -34,14 +36,15 @@ for i in range(0,num_tests):
     obs_mat = np.zeros((top_targets.size, top_targets.size, days.size))
 
     for pair in target_pairs:
-        for day in days:
-            obs_mat[ind_dic[pair[0]],ind_dic[pair[1]], day] = len( set( df_logs[df.logs.target_ip == k && df.logs.D == day].src_ip) 
-                     & set( df_logs[df.logs.target_ip == v && df.logs.D == day].src_ip) )
-            obs_mat[ind_dic[pair[1]],ind_dic[pair[0]], day] = obs_mat[ind_dic[pair[0]], ind_dic[pair[1]], day]        
-
+        for idx, day in enumerate(days):
+            k_set = set( df_logs[ (df_logs.target_ip == pair[0]) & (df_logs.D == day) ].src_ip) 
+            v_set = set( df_logs[ (df_logs.target_ip == pair[1]) & (df_logs.D == day) ].src_ip)
+            obs_mat[ ind_dic[pair[0]], ind_dic[pair[1]], idx] = len( k_set & v_set)
+            obs_mat[ ind_dic[pair[1]], ind_dic[pair[0]], idx] = obs_mat[ind_dic[pair[0]], ind_dic[pair[1]], idx]        
 
     # X = obs_mat.(top_targets.size, top_targets.size * days.size )
 
+    print "KMEANS"
     ##O2O clustering: kmeans, DBSCAN, KNN
     ## play with n_clusters parameter
     n_clusters = 10
@@ -56,6 +59,7 @@ for i in range(0,num_tests):
     NN_IPs = 2
 
     for subset in clusters:
+        print "cluster"
         criterion = df_logs.target_ip.map(lambda x: x in subset)
         logs = df_logs[criterion]
 

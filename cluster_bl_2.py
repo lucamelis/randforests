@@ -83,7 +83,7 @@ for i in range(0,num_tests):
 
     for subset in clusters:
         criterion = df_logs.target_ip.map(lambda x: x in subset)
-        logs = df_logs[criterion]
+        logs = df_logs[criterion].copy()
 
         attackers = np.unique(logs["src_ip"])
 
@@ -103,6 +103,7 @@ for i in range(0,num_tests):
 
         np.append(topIP_clusters, attackers[indices] )       
 
+        del logs
     # for target in top_targets:    
     #     stats = getPrediction( blacklist, whitelist, test_attackers[target] )
         

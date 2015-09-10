@@ -1,12 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import numpy as np
-import datetime as dt
-import pandas as pd
-
-#from util import *
-from itertools import combinations
+from util import *
 
 from sklearn.cluster import KMeans
 from scipy.stats import itemfreq
@@ -31,7 +26,8 @@ data_dir = 'data/'
 for i in range(0,num_tests):
     
     start_day = logs_start_day + dt.timedelta(days=i)
-    df_logs = pd.read_csv(data_dir + "logs" + start_day.date().isoformat() + ".txt", ** parser_params)
+    # df_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
+    df_logs = pd.read_pickle("data/sample.pkl")
     
     top_targets = np.unique( df_logs["target_ip"] )
 
@@ -54,7 +50,7 @@ for i in range(0,num_tests):
 
     print 'creating o2o matrix...'
     for pair in target_pairs:
-        print 'Pair: ', pair
+        # print 'Pair: ', pair
         for idx, day in enumerate(days):
             obs_mat[ ind_dic[pair[0]], ind_dic[pair[1]], idx] = len( victims_day_sets[pair[0]][idx] & victims_day_sets[pair[1]][idx])
             obs_mat[ ind_dic[pair[1]], ind_dic[pair[0]], idx] = obs_mat[ind_dic[pair[0]], ind_dic[pair[1]], idx]
@@ -97,7 +93,7 @@ for i in range(0,num_tests):
         df_gr = logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"], minlength=attackers.size) )
 
         IP_IP = np.zeros(attackers.size**2 )
-        for k,v in df_gr.itemfreq():
+        for k,v in df_gr.iteritems():
             IP_IP += [min(i) for i in product(v,v)]
 
         IP_IP = IP_IP.reshape(attackers.size,-1)
@@ -107,17 +103,17 @@ for i in range(0,num_tests):
 
         np.append(topIP_clusters, attackers[indices] )       
 
-    for target in top_targets:    
-        stats = getPrediction( blacklist, whitelist, test_attackers[target] )
+    # for target in top_targets:    
+    #     stats = getPrediction( blacklist, whitelist, test_attackers[target] )
         
-        stats["D"] = last_day   
-        stats["target"] = target        
+    #     stats["D"] = last_day   
+    #     stats["target"] = target        
 
-        stats["whitelist"] = whitelist
-        stats["blacklist"] = blacklist
-        stats["attacks"] = test_attackers
+    #     stats["whitelist"] = whitelist
+    #     stats["blacklist"] = blacklist
+    #     stats["attacks"] = test_attackers
                         
-        stats_list.append(stats)
+    #     stats_list.append(stats)
         
 
 df_stats = pd.DataFrame(stats_list)

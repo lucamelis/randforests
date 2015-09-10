@@ -9,9 +9,10 @@ import pandas as pd
 
 import datetime as dt
 import re
-from collections import Counter
+from itertools import combinations, product
 
 from sklearn import ensemble, feature_extraction, preprocessing, cross_validation, metrics
+from sklearn.neighbors import NearestNeighbors
 
 from pybloom import BloomFilter
 

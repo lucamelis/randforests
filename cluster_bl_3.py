@@ -85,9 +85,8 @@ for i in range(0, num_tests):
     
     clusters = [ top_targets[labels == k] for k in range(n_clusters)]
 
-    topIP_clusters = []
     kNN_alg = ['auto', 'ball_tree', 'kd_tree', 'brute']
-    NN_IPs = 2
+    NN_IPs = 5
 
     # local prediction and blacklist generation part - this dictionary holds each contributor's local blacklist
     print 'Computing local predictions...'
@@ -100,10 +99,13 @@ for i in range(0, num_tests):
     # intersection blacklist - this dictionary holds each contributor's intersection blacklist (i.e. the ips on his training set intersected 
     # with the blacklists of the contributors in his cluster)
     int_blacklists = dict()
+    
+    # ip2ip corelation blacklist
+    ip2ip_blacklists = dict()    
         
     # what happens in the cluster stays in the cluster     
     for subset in clusters:
-        
+                
         # get the cluster's contributors
         c_contributors = [x for x in subset]
         
@@ -117,40 +119,52 @@ for i in range(0, num_tests):
         # compute intersection blacklists
         int_dict = dict()
         int_dict = intersection_prediction(c_contributors, l_blacklists, victim_set)
-        
+                
         # concat the cluster dictionary with the global one
         int_blacklists = dict(int_blacklists.items() + int_dict.items())
         
         # create the ip2ip matrix for the cluster        
-        
         criterion = train_set.target_ip.map(lambda x: x in subset)
         logs = train_set[criterion].copy()
 
         attackers = np.unique(logs["src_ip"])
 
         ind_ips = dict( zip(attackers, range(attackers.size) ) )
+        reverse_ind_ips = dict( zip(ind_ips.values(), ind_ips.keys()) )
+    
         logs.src_ip = logs.src_ip.map(lambda x : ind_ips[x])
 
         df_gr = logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"], minlength=attackers.size) )
 
-        ip2ip = np.zeros(attackers.size**2 )
+        ip2ip = np.zeros( attackers.size**2 )
 
         for k,v in df_gr.iteritems():
             ip2ip += [min(i) for i in product(v,v)]
 
         ip2ip = ip2ip.reshape(attackers.size, -1)
-
-        nbrs = NearestNeighbors(n_neighbors= NN_IPs, algorithm= kNN_alg[1]).fit( ip2ip )
+        
+        # compute nearest neighbors based on the ip2ip matrix
+        nbrs = NearestNeighbors(n_neighbors= NN_IPs, algorithm= kNN_alg[1]).fit( ip2ip)
         _, indices = nbrs.kneighbors(ip2ip)
 
-        topIP_clusters.append(attackers[indices])
+        # for each attacker ip store the k corelated ips
+        corelated_ips = dict()
         
-        print topIP_clusters
-    
+        for attacker in attackers:
+            index = ind_ips[attacker]
+            corelated_ips[attacker] = [reverse_ind_ips[x] for x in indices[index]]
+                
+        # make ip2ip corelation prediction
+        ip2ip_dict = dict()
+        ip2ip_dict = ip2ip_prediction(c_contributors, l_blacklists, corelated_ips)
+        ip2ip_blacklists = dict(ip2ip_blacklists.items() + ip2ip_dict.items())        
+                
+        del corelated_ips; del df_gr; del ip2ip; del attackers; del ip2ip_dict;
+            
     # predictions verification part
     for target in top_targets:
         
-        stats = getPrediction( l_blacklists[target], gub_blacklists[target], int_blacklists[target], set( test_set[ (test_set.target_ip == target) ].src_ip ) )
+        stats = verify_prediction(l_blacklists[target], gub_blacklists[target], int_blacklists[target], ip2ip_blacklists[target], set( test_set[ (test_set.target_ip == target) ].src_ip ) )
 
         stats["D"] = last_day
         stats["target"] = target

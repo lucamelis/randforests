@@ -128,7 +128,7 @@ for i in range(0, num_tests):
         logs = train_set[criterion].copy()
 
         attackers = np.unique(logs["src_ip"])
-
+        
         ind_ips = dict( zip(attackers, range(attackers.size) ) )
         reverse_ind_ips = dict( zip(ind_ips.values(), ind_ips.keys()) )
     
@@ -150,10 +150,9 @@ for i in range(0, num_tests):
         # for each attacker ip store the k corelated ips
         corelated_ips = dict()
         
-        for attacker in attackers:
-            index = ind_ips[attacker]
-            corelated_ips[attacker] = [reverse_ind_ips[x] for x in indices[index]]
-                
+        for idx, x in enumerate(indices):
+            corelated_ips[reverse_ind_ips[idx]] = [reverse_ind_ips[y] for y in x] 
+                                
         # make ip2ip corelation prediction
         ip2ip_dict = dict()
         ip2ip_dict = ip2ip_prediction(c_contributors, l_blacklists, corelated_ips)

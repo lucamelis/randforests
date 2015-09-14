@@ -17,19 +17,18 @@ from sklearn.neighbors import NearestNeighbors
 from scipy.stats import itemfreq
 
 stats_list = []
-clusters_values = [2,4]
-
+clusters_values = [2, 4, 5, 10, 20]
 
 for i,n_clusters in product(range(num_tests),clusters_values):
     
     start_day = logs_start_day + dt.timedelta(days=i)
     
     # load the window data into a dataframe
-    window_logs = pd.read_pickle(data_dir + "sample.pkl")
-    #window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
+    #window_logs = pd.read_pickle(data_dir + "sample.pkl")
+    window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
     
     #extract /24 subnets from IPs # TODO: we should play around with /16, /8 as well
-    window_logs.src_ip = window_logs.src_ip.map(lambda x: x[:11])
+    window_logs.src_ip = window_logs.src_ip.map(lambda x: x[:7])
     
     # get the contributors of the window logs
     top_targets = np.unique( window_logs["target_ip"] )

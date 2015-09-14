@@ -17,8 +17,10 @@ from sklearn.neighbors import NearestNeighbors
 from scipy.stats import itemfreq
 
 stats_list = []
+clusters_values = [2,4,5,10,20]
 
-for i in range(0, num_tests):
+
+for i,n_clusters in product(range(num_tests),clusters_values):
     
     start_day = logs_start_day + dt.timedelta(days=i)
     
@@ -78,7 +80,6 @@ for i in range(0, num_tests):
     # clustering part 
     # TODO: play with kmeans, DBSCAN, KNN - also play with n_clusters parameter
     
-    n_clusters = 10
     estimator = KMeans(n_clusters=n_clusters)
     
     labels = estimator.fit( o2o.sum(axis=2) ).labels_ 
@@ -169,6 +170,7 @@ for i in range(0, num_tests):
         stats = verify_prediction(l_blacklists[target], gub_blacklists[target], int_blacklists[target], ip2ip_blacklists[target], set( test_set[ (test_set.target_ip == target) ].src_ip ) )
 
         stats["D"] = last_day
+        stats["n_clusters"] = n_clusters
         stats["target"] = target
 
         #stats["whitelist"] = whitelist
@@ -186,4 +188,4 @@ df_stats = pd.DataFrame(stats_list)
 compute_stats(df_stats)
 
 # save the df for later processing
-df_stats.to_pickle("stats.pkl")
+df_stats.to_pickle("K_means_stats.pkl")

@@ -25,36 +25,34 @@ def gub_prediction(contributors, blacklists):
             
     return gub_bl        
 
-# get the intersection of the training set attackers with the blacklist of the rest contributors in the cluster
-# and the union with the local blacklist     
-def intersection_prediction(contributors, blacklists, train_set_attackers):    
+# for each contributor, get the intersection of the attackers in his training set with the blacklist 
+# of the rest contributors in the cluster
+# then, get the union with the local blacklist     
+def intersection_prediction(contributor, contributors, blacklists, train_set_attackers):    
     
-    int_bl = dict()
+    int_bl = set()
     
     # if the cluster has one contributor then the local blacklist is returned
     if len(contributors) == 1:
-        for contributor in contributors:
-            int_bl[contributor] = blacklists[contributor]
+        int_bl = blacklists[contributor]
     
     else:
-        pairs = permutations(contributors, 2)
-    
-        for pair in pairs:
-            int_bl[pair[0]] = blacklists[pair[0]] | (train_set_attackers[pair[0]] & blacklists[pair[1]])
+        for cont in contributors:
+            int_bl = (train_set_attackers[contributor] & blacklists[cont])
+        
+        int_bl = blacklists[contributor] | int_bl
         
     return int_bl
 
-# blacklist according to ip2ip matrix - i.e. for each ip in my local blacklist, blacklist its nearest neighbors as well
-def ip2ip_prediction(contributors, blacklists, corelated_ips):
+# blacklist according to ip2ip matrix - i.e. for each ip in the local blacklist, blacklist its nearest neighbors as well
+def ip2ip_prediction(contributor, blacklists, corelated_ips):
     
-    ip2ip_bl = dict()
+    cor_ips = set()
     
-    for contributor in contributors:
-        cor_ips = set()
-        for ip in blacklists[contributor]:
-            cor_ips = cor_ips | set(corelated_ips[ip])    
+    for ip in blacklists[contributor]:
+        cor_ips = cor_ips | set(corelated_ips[ip])    
             
-        ip2ip_bl[contributor] = blacklists[contributor] | cor_ips
+    ip2ip_bl = blacklists[contributor] | cor_ips
     
     return ip2ip_bl
 
@@ -103,7 +101,7 @@ def compute_stats(stats):
     print 'Ip2ip TP: ', stats['tp_ip2ip'].sum()
     print 'TP Improvement of global over local: ', (stats['tp_gub'].sum() - stats['tp_local'].sum()) / float(stats['tp_local'].sum())
     print 'TP Improvement of intersection over local: ', (stats['tp_int'].sum() - stats['tp_local'].sum()) / float(stats['tp_local'].sum())
-    print 'TP Improvement of intersection over local: ', (stats['tp_ip2ip'].sum() - stats['tp_local'].sum()) / float(stats['tp_local'].sum())
+    print 'TP Improvement of ip2ip over local: ', (stats['tp_ip2ip'].sum() - stats['tp_local'].sum()) / float(stats['tp_local'].sum())
     
     print('-------------------')
     print 'Local FP: ', stats['fp_local'].sum()

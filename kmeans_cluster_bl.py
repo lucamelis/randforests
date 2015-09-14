@@ -17,7 +17,7 @@ from sklearn.neighbors import NearestNeighbors
 from scipy.stats import itemfreq
 
 stats_list = []
-clusters_values = [2,4,5,10,20]
+clusters_values = [2,4]
 
 
 for i,n_clusters in product(range(num_tests),clusters_values):

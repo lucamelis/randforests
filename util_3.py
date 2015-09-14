@@ -95,22 +95,26 @@ def verify_prediction(local_blacklist, gub_blacklist, int_blacklist, ip2ip_black
 # compute the aggregated stats 
 def compute_stats(stats):
     
-    print 'Local TP: ', stats['tp_local'].sum()
-    print 'Global TP: ', stats['tp_gub'].sum()
-    print 'Int TP: ', stats['tp_int'].sum()
-    print 'Ip2ip TP: ', stats['tp_ip2ip'].sum()
-    print 'TP Improvement of global over local: ', (stats['tp_gub'].sum() - stats['tp_local'].sum()) / float(stats['tp_local'].sum())
-    print 'TP Improvement of intersection over local: ', (stats['tp_int'].sum() - stats['tp_local'].sum()) / float(stats['tp_local'].sum())
-    print 'TP Improvement of ip2ip over local: ', (stats['tp_ip2ip'].sum() - stats['tp_local'].sum()) / float(stats['tp_local'].sum())
-    
-    print('-------------------')
-    print 'Local FP: ', stats['fp_local'].sum()
-    print 'Global FP: ', stats['fp_gub'].sum()
-    print 'Int FP: ', stats['fp_int'].sum()
-    print 'Ip2ip FP: ', stats['fp_ip2ip'].sum()
-    print 'FP Increase of global over local: ', (stats['fp_gub'].sum() - stats['fp_local'].sum()) / float(stats['fp_local'].sum())
-    print 'FP Increase of intersection over local: ', (stats['fp_int'].sum() - stats['fp_local'].sum()) / float(stats['fp_local'].sum())
-    print 'FP Increase of ip2ip over local: ', (stats['fp_ip2ip'].sum() - stats['fp_local'].sum()) / float(stats['fp_local'].sum())
+    for k in np.unique(stats["n_clusters"]):
+        k_stats = stats[stats.n_clusters == k]
+        print('********')
+        print 'N_clusters: ', k
+        print 'Local TP: ', k_stats['tp_local'].sum()
+        print 'Global TP: ', k_stats['tp_gub'].sum()
+        print 'Int TP: ', k_stats['tp_int'].sum()
+        print 'Ip2ip TP: ', k_stats['tp_ip2ip'].sum()
+        print 'TP Improvement of global over local: ', (k_stats['tp_gub'].sum() - k_stats['tp_local'].sum()) / float(k_stats['tp_local'].sum())
+        print 'TP Improvement of intersection over local: ', (k_stats['tp_int'].sum() - k_stats['tp_local'].sum()) / float(k_stats['tp_local'].sum())
+        print 'TP Improvement of ip2ip over local: ', (k_stats['tp_ip2ip'].sum() - k_stats['tp_local'].sum()) / float(k_stats['tp_local'].sum())
+        
+        print('-------------------')
+        print 'Local FP: ', k_stats['fp_local'].sum()
+        print 'Global FP: ', k_stats['fp_gub'].sum()
+        print 'Int FP: ', k_stats['fp_int'].sum()
+        print 'Ip2ip FP: ', k_stats['fp_ip2ip'].sum()
+        print 'FP Increase of global over local: ', (k_stats['fp_gub'].sum() - k_stats['fp_local'].sum()) / float(k_stats['fp_local'].sum())
+        print 'FP Increase of intersection over local: ', (k_stats['fp_int'].sum() - k_stats['fp_local'].sum()) / float(k_stats['fp_local'].sum())
+        print 'FP Increase of ip2ip over local: ', (k_stats['fp_ip2ip'].sum() - k_stats['fp_local'].sum()) / float(k_stats['fp_local'].sum())
         
 # compute jaccard similarity of two sets
 def jaccard_similarity(x, y):

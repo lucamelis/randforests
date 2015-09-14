@@ -162,7 +162,7 @@ for i, k in product(range(0, num_tests), nn_orgs):
         stats = verify_prediction(l_blacklists[target], gub_blacklists[target], int_blacklists[target], ip2ip_blacklists[target], set( test_set[ (test_set.target_ip == target) ].src_ip ) )
 
         stats["D"] = last_day
-        stats["k"] = k
+        stats["n_clusters"] = k
         stats["target"] = target
 
         #stats["whitelist"] = whitelist

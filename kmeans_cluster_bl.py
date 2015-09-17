@@ -18,14 +18,15 @@ from scipy.stats import itemfreq
 
 stats_list = []
 clusters_values = [2, 4, 5, 10, 20]
+k_near = min( [min(clusters_values), 3] )
 
 for i,n_clusters in product(range(num_tests),clusters_values):
     
     start_day = logs_start_day + dt.timedelta(days=i)
     
     # load the window data into a dataframe
-    #window_logs = pd.read_pickle(data_dir + "sample.pkl")
-    window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
+    window_logs = pd.read_pickle(data_dir + "sample.pkl")
+    # window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
     
     #extract /24 subnets from IPs # TODO: we should play around with /16, /8 as well
     window_logs.src_ip = window_logs.src_ip.map(lambda x: x[:7])
@@ -80,10 +81,17 @@ for i,n_clusters in product(range(num_tests),clusters_values):
     # TODO: play with kmeans, DBSCAN, KNN - also play with n_clusters parameter
     
     estimator = KMeans(n_clusters=n_clusters)
+    X_train = o2o.sum(axis=2)
+    labels = estimator.fit( X_train ).labels_ 
     
-    labels = estimator.fit( o2o.sum(axis=2) ).labels_ 
+    D_mat = estimator.transform(X_train).T.argsort(axis=1)[:,:k_near]
+    clusters = [ top_targets[idx] for idx in D_mat ]
     
-    clusters = [ top_targets[labels == k] for k in range(n_clusters)]
+    # top_targets = top_targets[np.unique(D_mat.ravel())]
+
+    # top_labels = np.array([labels[idx] for idx in D_mat ])
+
+    # clusters = [ top_targets[labels == k] for k in range(n_clusters)]
 
     kNN_alg = ['auto', 'ball_tree', 'kd_tree', 'brute']
     NN_IPs = 5

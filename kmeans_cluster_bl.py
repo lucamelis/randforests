@@ -30,11 +30,6 @@ for i in range(0, num_tests):
     
     # load the window data into a dataframe
     window_logs = pd.read_pickle(data_dir + "sample.pkl")
-<<<<<<< HEAD
-    # window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
-=======
-    #window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
->>>>>>> b4335850182cfae68104ecf9bc77feeeb320ed51
     
     #extract /24 subnets from IPs # TODO: we should play around with /16, /8 as well
     window_logs.src_ip = window_logs.src_ip.map(lambda x: x[:7])
@@ -85,7 +80,6 @@ for i in range(0, num_tests):
             o2o[ ind_dic[pair[0]], ind_dic[pair[1]], idx] = len( victim_daily_set[pair[0]][idx] & victim_daily_set[pair[1]][idx])
             o2o[ ind_dic[pair[1]], ind_dic[pair[0]], idx] = o2o[ind_dic[pair[0]], ind_dic[pair[1]], idx]
 
-<<<<<<< HEAD
     # clustering part 
     # TODO: play with kmeans, DBSCAN, KNN - also play with n_clusters parameter
     
@@ -105,8 +99,6 @@ for i in range(0, num_tests):
     kNN_alg = ['auto', 'ball_tree', 'kd_tree', 'brute']
     NN_IPs = 5
 
-=======
->>>>>>> b4335850182cfae68104ecf9bc77feeeb320ed51
     # local prediction and blacklist generation part - this dictionary holds each contributor's local blacklist
     print 'Computing local predictions...'
     l_blacklists = dict()

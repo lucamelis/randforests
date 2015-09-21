@@ -18,10 +18,8 @@ from scipy.stats import itemfreq
 
 stats_list = []
 clusters_values = [2, 4, 5, 10, 20]
-k_near = min( [min(clusters_values), 3] )
 
 kNN_alg = ['auto', 'ball_tree', 'kd_tree', 'brute']
-NN_IPs = 5    
 
 for i in range(0, num_tests):
     
@@ -29,8 +27,9 @@ for i in range(0, num_tests):
     start_day = logs_start_day + dt.timedelta(days=i)
     
     # load the window data into a dataframe
-    window_logs = pd.read_pickle(data_dir + "sample.pkl")
-    
+    # window_logs = pd.read_pickle(data_dir + "sample.pkl")
+    window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
+
     #extract /24 subnets from IPs # TODO: we should play around with /16, /8 as well
     window_logs.src_ip = window_logs.src_ip.map(lambda x: x[:7])
     
@@ -83,13 +82,6 @@ for i in range(0, num_tests):
     # clustering part 
     # TODO: play with kmeans, DBSCAN, KNN - also play with n_clusters parameter
     
-    estimator = KMeans(n_clusters=n_clusters)
-    X_train = o2o.sum(axis=2)
-    labels = estimator.fit( X_train ).labels_ 
-    
-    D_mat = estimator.transform(X_train).T.argsort(axis=1)[:,:k_near]
-    clusters = [ top_targets[idx] for idx in D_mat ]
-    
     # top_targets = top_targets[np.unique(D_mat.ravel())]
 
     # top_labels = np.array([labels[idx] for idx in D_mat ])
@@ -100,6 +92,7 @@ for i in range(0, num_tests):
     NN_IPs = 5
 
     # local prediction and blacklist generation part - this dictionary holds each contributor's local blacklist
+   
     print 'Computing local predictions...'
     l_blacklists = dict()
     l_blacklists = ts.local_prediction(top_targets, train_set, i)      
@@ -111,10 +104,13 @@ for i in range(0, num_tests):
         
         print 'Kvalue: ', n_clusters
         estimator = KMeans(n_clusters=n_clusters)
-    
-        labels = estimator.fit( o2o.sum(axis=2) ).labels_ 
-    
-        clusters = [ top_targets[labels == k] for k in range(n_clusters)]
+        X_train = o2o.sum(axis=2)
+        labels = estimator.fit( X_train ).labels_ 
+
+        #only the top 10% contributors per cluster is selected
+        k_near = np.int((top_targets.size/n_clusters)*0.1)
+        D_mat = estimator.transform(X_train).T.argsort(axis=1)[:,:k_near]
+        clusters = [ top_targets[idx] for idx in D_mat ]
         
         # global blacklist - this dictionary holds each contributor's global blacklist (i.e. the one generated from his cluster)
         gub_blacklists = dict()
@@ -149,9 +145,8 @@ for i in range(0, num_tests):
                 ip2ip += [min(f) for f in product(v,v)]
 
             ip2ip = ip2ip.reshape(attackers.size, -1)
-
             # compute nearest neighbors based on the ip2ip matrix
-            nbrs = NearestNeighbors(n_neighbors= NN_IPs, algorithm= kNN_alg[1]).fit( ip2ip )
+            nbrs = NearestNeighbors(n_neighbors= min(NN_IPs,attackers.size), algorithm= kNN_alg[1]).fit( ip2ip )
             _, indices = nbrs.kneighbors(ip2ip)
 
             # for each attacker ip store the k corelated ips
@@ -185,12 +180,16 @@ for i in range(0, num_tests):
             
         # predictions verification part
         for target in top_targets:
-        
-            stats = verify_prediction(l_blacklists[target], gub_blacklists[target], int_blacklists[target], ip2ip_blacklists[target], set( test_set[ (test_set.target_ip == target) ].src_ip ) )
+            if target in np.unique(clusters):
+                stats = verify_prediction(l_blacklists[target], gub_blacklists[target], int_blacklists[target], ip2ip_blacklists[target], set( test_set[ (test_set.target_ip == target) ].src_ip ) )
+                stats["n_clusters"] = n_clusters
+            else:
+                #no sharing contribs
+                stats = verify_prediction(l_blacklists[target], l_blacklists[target], l_blacklists[target], l_blacklists[target], set( test_set[ (test_set.target_ip == target) ].src_ip ) )
+                stats["n_clusters"] = 0
             #stats = verify_prediction(l_blacklists[target], gub_blacklists[target], int_blacklists[target], set( test_set[ (test_set.target_ip == target) ].src_ip ) )
 
             stats["D"] = last_day
-            stats["n_clusters"] = n_clusters
             stats["target"] = target
 
             stats_list.append(stats)    

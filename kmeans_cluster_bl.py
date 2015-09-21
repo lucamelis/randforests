@@ -108,10 +108,9 @@ for i in range(0, num_tests):
         labels = estimator.fit( X_train ).labels_ 
 
         #only the top 10% contributors per cluster is selected
-        k_near = np.int((top_targets.size/n_clusters)*0.1)
-        D_mat = estimator.transform(X_train).T.argsort(axis=1)[:,:k_near]
+        k_near = np.ceil((top_targets.size/n_clusters)*0.2)
+        D_mat = estimator.transform(X_train).T.argsort(axis=1)[:,:int(k_near)]
         clusters = [ top_targets[idx] for idx in D_mat ]
-        
         # global blacklist - this dictionary holds each contributor's global blacklist (i.e. the one generated from his cluster)
         gub_blacklists = dict()
     
@@ -124,8 +123,6 @@ for i in range(0, num_tests):
         
         # what happens in the cluster stays in the cluster     
         for subset in clusters:
-                
-            # create the ip2ip matrix for the cluster
             criterion = train_set.target_ip.map(lambda x: x in subset)
             logs = train_set[criterion].copy()
 
@@ -139,7 +136,7 @@ for i in range(0, num_tests):
             df_gr = logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"], minlength=attackers.size) )
 
             ip2ip = np.zeros( attackers.size**2 )
-
+            # create the ip2ip matrix for the cluster
             print 'computing ip2ip matrix...'
             for k, v in df_gr.iteritems():
                 ip2ip += [min(f) for f in product(v,v)]

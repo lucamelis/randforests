@@ -55,7 +55,7 @@ for i in range(0, num_tests):
     ind_dic = dict( zip(top_targets, range(top_targets.size) ) )
 
     # organization to organization matrix
-    o2o = np.zeros((top_targets.size, top_targets.size, days.size))
+    o2o = np.zeros((top_targets.size, top_targets.size, days.size), dtype=np.int8)
 
     # create a dictionary where each contributors stores his attacker set over all the training window
     print 'creating attacker set dictionary...'
@@ -135,11 +135,11 @@ for i in range(0, num_tests):
 
             df_gr = logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"], minlength=attackers.size) )
 
-            ip2ip = np.zeros( attackers.size**2 )
+            ip2ip = np.zeros( attackers.size**2, dtype=np.int8)
             # create the ip2ip matrix for the cluster
             print 'computing ip2ip matrix...'
             for k, v in df_gr.iteritems():
-                ip2ip += [min(f) for f in product(v,v)]
+                ip2ip += [int(min(f)) for f in product(v,v)]
 
             ip2ip = ip2ip.reshape(attackers.size, -1)
             # compute nearest neighbors based on the ip2ip matrix

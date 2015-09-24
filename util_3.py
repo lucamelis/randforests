@@ -15,6 +15,19 @@ window_length = 6
 
 data_dir = 'data/' # directory where the data are stored 
 
+def getHeavyHitters(attackers,tau):
+    """
+    Take the most frequent attackers which cover the tau \in [0,1] of the frequency population
+    """
+    from collections import Counter
+    import bisect
+    import operator
+    xs, freqs = zip( *sorted( Counter(attackers).items(), key=operator.itemgetter(1), reverse=True) )
+    print xs,freqs
+    ps = np.cumsum(freqs, dtype=np.float)
+    ps /= ps[-1]
+    return np.array( xs[: bisect.bisect_left(ps, tau)] )
+    
 # get the gub prediction - i.e. blacklist is the union of blacklists for all contributors in the cluster
 def gub_prediction(contributors, blacklists):
     

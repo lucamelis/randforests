@@ -27,8 +27,8 @@ for i in range(0, num_tests):
     start_day = logs_start_day + dt.timedelta(days=i)
     
     # load the window data into a dataframe
-    # window_logs = pd.read_pickle(data_dir + "sample.pkl")
-    window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
+    window_logs = pd.read_pickle(data_dir + "sample.pkl")
+    # window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
 
     #extract /24 subnets from IPs # TODO: we should play around with /16, /8 as well
     window_logs.src_ip = window_logs.src_ip.map(lambda x: x[:7])
@@ -99,7 +99,7 @@ for i in range(0, num_tests):
     
     # clustering part 
     # TODO: play with kmeans, DBSCAN, KNN - also play with n_clusters parameter
-    
+    from collections import Counter
     for n_clusters in clusters_values:
         
         print 'Kvalue: ', n_clusters
@@ -123,27 +123,29 @@ for i in range(0, num_tests):
         
         # what happens in the cluster stays in the cluster     
         for subset in clusters:
+            
             criterion = train_set.target_ip.map(lambda x: x in subset)
             logs = train_set[criterion].copy()
-
-            attackers = np.unique(logs["src_ip"])
-
-            ind_ips = dict( zip(attackers, range(attackers.size) ) )
+            top_attackers = getHeavyHitters( logs["src_ip"] ,0.9 )
+            print top_attackers
+            ind_ips = dict( zip(top_attackers, range(top_attackers.size) ) )
             reverse_ind_ips = dict( zip(ind_ips.values(), ind_ips.keys()) )
 
+            criterion = logs.src_ip.map(lambda x: x in top_attackers)
+            logs = logs[criterion]
             logs.src_ip = logs.src_ip.map(lambda x : ind_ips[x])
 
-            df_gr = logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"], minlength=attackers.size) )
+            df_gr = logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"], minlength=top_attackers.size) )
 
-            ip2ip = np.zeros( attackers.size**2, dtype=np.int8)
+            ip2ip = np.zeros( top_attackers.size**2, dtype=np.int8)
             # create the ip2ip matrix for the cluster
             print 'computing ip2ip matrix...'
             for k, v in df_gr.iteritems():
                 ip2ip += [int(min(f)) for f in product(v,v)]
 
-            ip2ip = ip2ip.reshape(attackers.size, -1)
+            ip2ip = ip2ip.reshape(top_attackers.size, -1)
             # compute nearest neighbors based on the ip2ip matrix
-            nbrs = NearestNeighbors(n_neighbors= min(NN_IPs,attackers.size), algorithm= kNN_alg[1]).fit( ip2ip )
+            nbrs = NearestNeighbors(n_neighbors= min(NN_IPs,top_attackers.size), algorithm= kNN_alg[1]).fit( ip2ip )
             _, indices = nbrs.kneighbors(ip2ip)
 
             # for each attacker ip store the k corelated ips
@@ -173,7 +175,7 @@ for i in range(0, num_tests):
                 ip2ip_set = ip2ip_prediction(contributor, l_blacklists, corelated_ips)
                 ip2ip_blacklists[contributor] = ip2ip_set
                 
-           # del corelated_ips; del df_gr; del ip2ip; del attackers;
+           # del corelated_ips; del df_gr; del ip2ip; del top_attackers;
             
         # predictions verification part
         for target in top_targets:

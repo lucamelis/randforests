@@ -93,7 +93,8 @@ for i in range(0, num_tests):
         
         # compute nearest neighbors based on the ip2ip matrix
         neighbors = NearestNeighbors(n_neighbors = k, algorithm = kNN_alg[1]).fit( o2o.sum(axis=2) )
-        _, indices = neighbors.kneighbors(o2o.sum(axis=2))
+        dist, indices = neighbors.kneighbors(o2o.sum(axis=2))
+        print dist
 
         # dictionary storing for each contributor a list with its nearest neighbors
         org_neighbors = dict()

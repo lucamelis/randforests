@@ -7,6 +7,7 @@ import datetime as dt
 import numpy as np
 
 from itertools import permutations, product
+from scipy.stats import pearsonr
 
 logs_start_day = dt.datetime.strptime("2015-05-17", '%Y-%m-%d')
 

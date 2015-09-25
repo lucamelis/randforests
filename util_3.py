@@ -7,6 +7,7 @@ import datetime as dt
 import numpy as np
 
 from itertools import permutations, product
+from scipy.stats import pearsonr
 
 logs_start_day = dt.datetime.strptime("2015-05-17", '%Y-%m-%d')
 
@@ -27,9 +28,43 @@ def getHeavyHitters(attackers,tau):
     xs, freqs = zip( *sorted( Counter(attackers).items(), key=operator.itemgetter(1), reverse=True) )
     ps = np.cumsum(freqs, dtype=np.float)
     ps /= ps[-1]
+<<<<<<< HEAD
     index = bisect.bisect_left(ps, tau)
 
     return np.array( xs[: index if index>0 else 1] )
+=======
+    return np.array( xs[: bisect.bisect_left(ps, tau)] )
+  
+# compute the Pearson correlation between 2 contributors
+def compute_pearson(train_set, contributor1, contributor2):
+    
+    print 'Pair:', str(contributor1 +',' + contributor2)
+        
+    # create frequency dictionaries for each contributor
+    df1 = train_set[ train_set['target_ip'] == contributor1]
+    df2 = train_set[ train_set['target_ip'] == contributor2]
+        
+    freq_dict1 = df1.src_ip.value_counts().to_dict()
+    freq_dict2 = df2.src_ip.value_counts().to_dict()
+    
+    del df1, df2
+    
+    ip_space = set(freq_dict1.keys()) | set(freq_dict2.keys())
+    
+    ind_ip = dict( zip(ip_space, range(len(ip_space)) ) )
+    vector1 = np.zeros(len(ip_space), dtype = np.uint32)
+    vector2 = np.zeros(len(ip_space), dtype = np.uint32)
+    
+    for key, value in freq_dict1.iteritems():
+        vector1[ind_ip[key]] = value
+    
+    for key, value in freq_dict2.iteritems():
+        vector2[ind_ip[key]] = value
+    
+    cor = pearsonr(vector1, vector2)
+    
+    return cor[0]
+>>>>>>> bd78858c607e2d6f4accabd9e2010ef734a17b09
     
 # get the gub prediction - i.e. blacklist is the union of blacklists for all contributors in the cluster
 def gub_prediction(contributors, blacklists):
@@ -65,6 +100,7 @@ def intersection_prediction(contributor, contributors, blacklists, train_set_att
 # blacklist its nearest neighbors as well
 def ip2ip_prediction(contributor, blacklists, corelated_ips, top_attackers):
     
+<<<<<<< HEAD
     cor_ips = set()
     
     for ip in set(blacklists[contributor]) & set(top_attackers):
@@ -73,6 +109,21 @@ def ip2ip_prediction(contributor, blacklists, corelated_ips, top_attackers):
     ip2ip_bl = blacklists[contributor] | cor_ips
     
     return ip2ip_bl
+=======
+   bl_cor_ips = set()
+   
+   for ip in blacklists[contributor]:
+       try:
+           ip_set = set(corelated_ips[ip])
+       except KeyError:
+           ip_set = set()
+       
+       bl_cor_ips = bl_cor_ips | ip_set
+           
+   ip2ip_bl = blacklists[contributor] | bl_cor_ips
+   
+   return ip2ip_bl
+>>>>>>> bd78858c607e2d6f4accabd9e2010ef734a17b09
 
 # compute some prediction stats
 def verify_prediction(local_blacklist, gub_blacklist, int_blacklist, ip2ip_blacklist, ground_truth):

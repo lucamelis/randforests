@@ -17,7 +17,7 @@ from sklearn.neighbors import NearestNeighbors
 from scipy.stats import itemfreq
 
 stats_list = []
-clusters_values = [2, 4, 5, 10, 20]
+clusters_values = [20]#, 4, 5, 10, 20]
 
 kNN_alg = ['auto', 'ball_tree', 'kd_tree', 'brute']
 
@@ -55,7 +55,7 @@ for i in range(0, num_tests):
     ind_dic = dict( zip(top_targets, range(top_targets.size) ) )
 
     # organization to organization matrix
-    o2o = np.zeros((top_targets.size, top_targets.size, days.size), dtype=np.int8)
+    o2o = np.zeros((top_targets.size, top_targets.size, days.size) )
 
     # create a dictionary where each contributors stores his attacker set over all the training window
     print 'creating attacker set dictionary...'
@@ -127,7 +127,6 @@ for i in range(0, num_tests):
             criterion = train_set.target_ip.map(lambda x: x in subset)
             logs = train_set[criterion].copy()
             top_attackers = getHeavyHitters( logs["src_ip"] ,0.9 )
-            print top_attackers
             ind_ips = dict( zip(top_attackers, range(top_attackers.size) ) )
             reverse_ind_ips = dict( zip(ind_ips.values(), ind_ips.keys()) )
 
@@ -137,11 +136,11 @@ for i in range(0, num_tests):
 
             df_gr = logs.groupby("D").apply(lambda x: np.bincount( x["src_ip"], minlength=top_attackers.size) )
 
-            ip2ip = np.zeros( top_attackers.size**2, dtype=np.int8)
+            ip2ip = np.zeros( top_attackers.size**2, dtype=np.uint32)
             # create the ip2ip matrix for the cluster
             print 'computing ip2ip matrix...'
             for k, v in df_gr.iteritems():
-                ip2ip += [int(min(f)) for f in product(v,v)]
+                ip2ip += [np.uint32(min(f)) for f in product(v,v)]
 
             ip2ip = ip2ip.reshape(top_attackers.size, -1)
             # compute nearest neighbors based on the ip2ip matrix
@@ -172,7 +171,7 @@ for i in range(0, num_tests):
                                         
                 # make ip2ip corelation prediction
                 ip2ip_set = set()
-                ip2ip_set = ip2ip_prediction(contributor, l_blacklists, corelated_ips)
+                ip2ip_set = ip2ip_prediction(contributor, l_blacklists, corelated_ips, top_attackers)
                 ip2ip_blacklists[contributor] = ip2ip_set
                 
            # del corelated_ips; del df_gr; del ip2ip; del top_attackers;

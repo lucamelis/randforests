@@ -18,16 +18,18 @@ data_dir = 'data/' # directory where the data are stored
 
 def getHeavyHitters(attackers,tau):
     """
-    Take the most frequent attackers which cover the tau \in [0,1] of the frequency population
+    Take the most frequent attackers which cover the tau \in (0,1) of the cdf
     """
     from collections import Counter
     import bisect
     import operator
+
+    assert 0 < tau < 1 
     xs, freqs = zip( *sorted( Counter(attackers).items(), key=operator.itemgetter(1), reverse=True) )
-    print xs,freqs
     ps = np.cumsum(freqs, dtype=np.float)
     ps /= ps[-1]
-    return np.array( xs[: bisect.bisect_left(ps, tau)] )
+    index = bisect.bisect_left(ps, tau)
+    return np.array( xs[: index if index>0 else 1] )
   
 # compute the Pearson correlation between 2 contributors
 def compute_pearson( df1, df2 ):
@@ -84,7 +86,9 @@ def intersection_prediction(contributor, contributors, blacklists, train_set_att
         
     return int_bl
 
-# blacklist according to ip2ip matrix - i.e. for each ip in the local blacklist, blacklist its nearest neighbors as well
+# blacklist according to the (heavy attackers) ip2ip matrix - 
+# i.e. for each ip in the local blacklist AND in the ip2ip matrix, 
+# blacklist its nearest neighbors as well
 def ip2ip_prediction(contributor, blacklists, corelated_ips):
     
    bl_cor_ips = set()

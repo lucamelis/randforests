@@ -30,33 +30,29 @@ def getHeavyHitters(attackers,tau):
     return np.array( xs[: bisect.bisect_left(ps, tau)] )
   
 # compute the Pearson correlation between 2 contributors
-def compute_pearson(train_set, contributor1, contributor2):
+def compute_pearson( df1, df2 ):
     
-    print 'Pair:', str(contributor1 +',' + contributor2)
-        
-    # create frequency dictionaries for each contributor
-    df1 = train_set[ train_set['target_ip'] == contributor1]
-    df2 = train_set[ train_set['target_ip'] == contributor2]
-        
-    freq_dict1 = df1.src_ip.value_counts().to_dict()
-    freq_dict2 = df2.src_ip.value_counts().to_dict()
+    # create frequency dictionaries
+    freq_dict1 = df1.value_counts().to_dict()
+    freq_dict2 = df2.value_counts().to_dict()
     
-    del df1, df2
-    
+    # create ip space
     ip_space = set(freq_dict1.keys()) | set(freq_dict2.keys())
     
     ind_ip = dict( zip(ip_space, range(len(ip_space)) ) )
     vector1 = np.zeros(len(ip_space), dtype = np.uint32)
     vector2 = np.zeros(len(ip_space), dtype = np.uint32)
     
+    # create vectors
     for key, value in freq_dict1.iteritems():
         vector1[ind_ip[key]] = value
-    
+
     for key, value in freq_dict2.iteritems():
         vector2[ind_ip[key]] = value
-    
+
+    # compute pearson
     cor = pearsonr(vector1, vector2)
-    
+
     return cor[0]
     
 # get the gub prediction - i.e. blacklist is the union of blacklists for all contributors in the cluster

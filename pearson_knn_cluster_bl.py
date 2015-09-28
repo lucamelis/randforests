@@ -12,6 +12,7 @@ from itertools import combinations
 from itertools import product
 
 from sklearn.neighbors import NearestNeighbors
+from timer import Timer
 
 kNN_alg = ['auto', 'ball_tree', 'kd_tree', 'brute']
 nn_orgs = [2, 4, 5, 10, 20]
@@ -25,11 +26,11 @@ for i in range(0, num_tests):
     start_day = logs_start_day + dt.timedelta(days=i)
 
     # load the window data into a dataframe
-    window_logs = pd.read_pickle(data_dir + "sample.pkl")
-    #window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
+    #window_logs = pd.read_pickle(data_dir + "sample.pkl")
+    window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
 
     #extract /24 subnets from IPs # TODO: we should play around with /16, /8 as well
-    window_logs.src_ip = window_logs.src_ip.map(lambda x: x[:7])
+    window_logs.src_ip = window_logs.src_ip.map(lambda x: x[:11])
 
     # get the contributors of the window logs
     top_targets = np.unique( window_logs["target_ip"] )
@@ -62,11 +63,16 @@ for i in range(0, num_tests):
     print 'creating attacker set dictionary...'
     victim_set = dict()
     for target in top_targets:
-        victim_set[target] = set( train_set[ (train_set.target_ip == target) ].src_ip )     
+        victim_set[target] = set( train_set[ (train_set.target_ip == target) ].src_ip )
 
+    print 'creating daily attacker dictionary for pearson...'
+    victim_daily_set = dict()
+    for target in top_targets:
+        victim_daily_set[target] = train_set[ (train_set.target_ip == target) ].src_ip
+    
     print 'Creating Pearson o2o matrix...'            
     for pair in target_pairs:
-        o2o[ ind_orgs[pair[0]], ind_orgs[pair[1]]] = compute_pearson(train_set, pair[0], pair[1])
+        o2o[ ind_orgs[pair[0]], ind_orgs[pair[1]]] = compute_pearson( victim_daily_set[pair[0]], victim_daily_set[pair[1]] )
         o2o[ ind_orgs[pair[1]], ind_orgs[pair[0]]] = o2o[ind_orgs[pair[0]], ind_orgs[pair[1]]]
     
     # o2o might contain nan values - knn complains

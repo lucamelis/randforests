@@ -171,7 +171,7 @@ for i in range(0, num_tests):
                                         
                 # make ip2ip corelation prediction
                 ip2ip_set = set()
-                ip2ip_set = ip2ip_prediction(contributor, l_blacklists, corelated_ips, top_attackers)
+                ip2ip_set = ip2ip_prediction(contributor, l_blacklists, corelated_ips)
                 ip2ip_blacklists[contributor] = ip2ip_set
                 
            # del corelated_ips; del df_gr; del ip2ip; del top_attackers;

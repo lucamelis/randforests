@@ -28,12 +28,8 @@ def getHeavyHitters(attackers,tau):
     xs, freqs = zip( *sorted( Counter(attackers).items(), key=operator.itemgetter(1), reverse=True) )
     ps = np.cumsum(freqs, dtype=np.float)
     ps /= ps[-1]
-<<<<<<< HEAD
     index = bisect.bisect_left(ps, tau)
-
     return np.array( xs[: index if index>0 else 1] )
-=======
-    return np.array( xs[: bisect.bisect_left(ps, tau)] )
   
 # compute the Pearson correlation between 2 contributors
 def compute_pearson(train_set, contributor1, contributor2):
@@ -64,7 +60,6 @@ def compute_pearson(train_set, contributor1, contributor2):
     cor = pearsonr(vector1, vector2)
     
     return cor[0]
->>>>>>> bd78858c607e2d6f4accabd9e2010ef734a17b09
     
 # get the gub prediction - i.e. blacklist is the union of blacklists for all contributors in the cluster
 def gub_prediction(contributors, blacklists):
@@ -98,18 +93,8 @@ def intersection_prediction(contributor, contributors, blacklists, train_set_att
 # blacklist according to the (heavy attackers) ip2ip matrix - 
 # i.e. for each ip in the local blacklist AND in the ip2ip matrix, 
 # blacklist its nearest neighbors as well
-def ip2ip_prediction(contributor, blacklists, corelated_ips, top_attackers):
+def ip2ip_prediction(contributor, blacklists, corelated_ips):
     
-<<<<<<< HEAD
-    cor_ips = set()
-    
-    for ip in set(blacklists[contributor]) & set(top_attackers):
-            cor_ips = cor_ips | set(corelated_ips[ip])    
-            
-    ip2ip_bl = blacklists[contributor] | cor_ips
-    
-    return ip2ip_bl
-=======
    bl_cor_ips = set()
    
    for ip in blacklists[contributor]:
@@ -123,7 +108,6 @@ def ip2ip_prediction(contributor, blacklists, corelated_ips, top_attackers):
    ip2ip_bl = blacklists[contributor] | bl_cor_ips
    
    return ip2ip_bl
->>>>>>> bd78858c607e2d6f4accabd9e2010ef734a17b09
 
 # compute some prediction stats
 def verify_prediction(local_blacklist, gub_blacklist, int_blacklist, ip2ip_blacklist, ground_truth):

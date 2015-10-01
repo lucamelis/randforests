@@ -11,7 +11,7 @@ from scipy.stats import pearsonr
 
 logs_start_day = dt.datetime.strptime("2015-05-17", '%Y-%m-%d')
 
-num_tests = 10 # TODO: this should be 10 for the actual experiments
+num_tests = 1 # TODO: this should be 10 for the actual experiments
 window_length = 6
 
 data_dir = 'data/' # directory where the data are stored 
@@ -106,12 +106,13 @@ def combined_int_ip2ip_prediction(int_blacklist, ip2ip_blacklist):
     return int_blacklist | ip2ip_blacklist
 
 # compute some prediction stats
-def verify_prediction(local_blacklist, gub_blacklist, int_blacklist, ip2ip_blacklist, ground_truth):
+def verify_prediction(local_blacklist, gub_blacklist, int_blacklist, ip2ip_blacklist, int_ip2ip_blacklist, ground_truth):
 
     assert type(local_blacklist) is set
     assert type(gub_blacklist) is set
     assert type(int_blacklist) is set
     assert type(ip2ip_blacklist) is set
+    assert type(int_ip2ip_blacklist) is set
     assert type(ground_truth) is set
 
     d = {}
@@ -127,29 +128,37 @@ def verify_prediction(local_blacklist, gub_blacklist, int_blacklist, ip2ip_black
     d["tp_ip2ip"] = len( ip2ip_blacklist & ground_truth )
     d["fp_ip2ip"] = len( ip2ip_blacklist - ground_truth )
     
+    d["tp_int_ip2ip"] = len( int_ip2ip_blacklist & ground_truth )
+    d["fp_int_ip2ip"] = len( int_ip2ip_blacklist - ground_truth )
+    
     d["n_attacks"] = len(ground_truth)     
     d["len_local_blacklist"] = len(local_blacklist)
     d["len_gub_blacklist"] = len(gub_blacklist)
     d["len_int_blacklist"] = len(int_blacklist)
     d["len_ip2ip_blacklist"] = len(ip2ip_blacklist)
-    
+    d["len_int_ip2ip_blacklist"] = len(int_ip2ip_blacklist)
+        
     try:
         d["tp_impr_gub"] = (d["tp_gub"] - d["tp_local"]) / float(d["tp_local"])
         d["tp_impr_int"] = (d["tp_int"] - d["tp_local"]) / float(d["tp_local"])
         d["tp_impr_ip2ip"] = (d["tp_ip2ip"] - d["tp_local"]) / float(d["tp_local"])
+        d["tp_impr_int_ip2ip"] = (d["tp_int_ip2ip"] - d["tp_local"]) / float(d["tp_local"])
     except ZeroDivisionError:
         d["tp_impr_gub"] = 0.0
         d["tp_impr_int"] = 0.0
         d["tp_impr_ip2ip"] = 0.0
+        d["tp_impr_int_ip2ip"] = 0.0
         
     try:    
         d["fp_incr_gub"] = (d["fp_gub"] - d["fp_local"]) / float(d["fp_local"])
         d["fp_incr_int"] = (d["fp_int"] - d["fp_local"]) / float(d["fp_local"])    
         d["fp_incr_ip2ip"] = (d["fp_ip2ip"] - d["fp_local"]) / float(d["fp_local"])
+        d["fp_incr_int_ip2ip"] = (d["fp_int_ip2ip"] - d["fp_local"]) / float(d["fp_local"])
     except ZeroDivisionError:
         d["fp_incr_gub"] = 0.0
         d["fp_incr_int"] = 0.0
         d["fp_incr_ip2ip"] = 0.0
+        d["fp_incr_int_ip2ip"] = 0.0
         
     return d    
 
@@ -160,26 +169,30 @@ def compute_stats(stats):
         
         k_stats = stats[stats.n_clusters == k]
         
-        print('*************************')
+        print('*********************************')
         print 'N_clusters: ', k
         print 'Local TP: ', k_stats['tp_local'].sum()
         print 'Global TP: ', k_stats['tp_gub'].sum()
         print 'Int TP: ', k_stats['tp_int'].sum()
         print 'Ip2ip TP: ', k_stats['tp_ip2ip'].sum()
+        print 'Int Ip2ip TP: ', k_stats['tp_int_ip2ip'].sum()
         
         print 'TP Improvement of global over local: ', ( k_stats['tp_impr_gub'].sum() / len(k_stats['tp_impr_gub']) )
         print 'TP Improvement of intersection over local: ', ( k_stats['tp_impr_int'].sum() / len(k_stats['tp_impr_int']) )
         print 'TP Improvement of ip2ip over local: ', (k_stats['tp_impr_ip2ip'].sum() / len(k_stats['tp_impr_ip2ip']) )
+        print 'TP Improvement of int ip2ip over local: ', (k_stats['tp_impr_int_ip2ip'].sum() / len(k_stats['tp_impr_int_ip2ip']) )
         
         print('-----------------------')
         print 'Local FP: ', k_stats['fp_local'].sum()
         print 'Global FP: ', k_stats['fp_gub'].sum()
         print 'Int FP: ', k_stats['fp_int'].sum()
         print 'Ip2ip FP: ', k_stats['fp_ip2ip'].sum()
+        print 'Int Ip2ip FP: ', k_stats['fp_int_ip2ip'].sum()
         
         print 'FP Increase of global over local: ', (k_stats['fp_incr_gub'].sum() / len(k_stats['fp_incr_gub']) )
         print 'FP Increase of intersection over local: ', (k_stats['fp_incr_int'].sum() / len(k_stats['fp_incr_int']) )
         print 'FP Increase of ip2ip over local: ', (k_stats['fp_incr_ip2ip'].sum() / len(k_stats['fp_incr_ip2ip']) )
+        print 'FP Increase of int ip2ip over local: ', (k_stats['fp_incr_int_ip2ip'].sum() / len(k_stats['fp_incr_int_ip2ip']) )
         
 # compute jaccard similarity of two sets
 def jaccard_similarity(x, y):

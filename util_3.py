@@ -11,7 +11,7 @@ from scipy.stats import pearsonr
 
 logs_start_day = dt.datetime.strptime("2015-05-17", '%Y-%m-%d')
 
-num_tests = 1 # TODO: this should be 10 for the actual experiments
+num_tests = 10 # TODO: this should be 10 for the actual experiments
 window_length = 6
 
 data_dir = 'data/' # directory where the data are stored 
@@ -30,7 +30,7 @@ def getHeavyHitters(attackers,tau):
     ps /= ps[-1]
     index = bisect.bisect_left(ps, tau)
     return np.array( xs[: index if index>0 else 1] )
-  
+      
 # compute the Pearson correlation between 2 contributors
 def compute_pearson( df1, df2 ):
     
@@ -93,17 +93,17 @@ def ip2ip_prediction(contributor, blacklists, corelated_ips):
     
    bl_cor_ips = set()
    
-   for ip in blacklists[contributor]:
-       try:
-           ip_set = set(corelated_ips[ip])
-       except KeyError:
-           ip_set = set()
+   for ip in (blacklists[contributor] & set(corelated_ips.keys()) ):
+       ip_set = set(corelated_ips[ip])
        
        bl_cor_ips = bl_cor_ips | ip_set
            
    ip2ip_bl = blacklists[contributor] | bl_cor_ips
    
    return ip2ip_bl
+
+def combined_int_ip2ip_prediction(int_blacklist, ip2ip_blacklist):
+    return int_blacklist | ip2ip_blacklist
 
 # compute some prediction stats
 def verify_prediction(local_blacklist, gub_blacklist, int_blacklist, ip2ip_blacklist, ground_truth):

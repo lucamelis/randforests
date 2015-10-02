@@ -30,7 +30,7 @@ for i in range(0, num_tests):
 
     # load the window data into a dataframe
     #window_logs = pd.read_pickle(data_dir + "sample.pkl")
-    window_logs = pd.read_pickle(data_dir + "df_" + start_day.date().isoformat() + ".pkl")
+    window_logs = pd.read_pickle(data_dir + data_prefix + start_day.date().isoformat() + ".pkl")
 
     #extract /24 subnets from IPs # TODO: we should play around with /16, /8 as well
     window_logs.src_ip = window_logs.src_ip.map(lambda x: x[:11])

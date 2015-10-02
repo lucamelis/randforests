@@ -15,6 +15,7 @@ num_tests = 1 # TODO: this should be 10 for the actual experiments
 window_length = 6
 
 data_dir = 'data/' # directory where the data are stored 
+data_prefix = 'df_sample_'
 
 def getHeavyHitters(attackers,tau):
     """
@@ -163,36 +164,64 @@ def verify_prediction(local_blacklist, gub_blacklist, int_blacklist, ip2ip_black
     return d    
 
 # compute the aggregated stats 
-def compute_stats(stats):
+def compute_stats(method, stats):
+    
+    fi = open(method +'_overall_stats.txt', 'w')
     
     for k in np.unique(stats["n_clusters"]):
         
         k_stats = stats[stats.n_clusters == k]
         
-        print('*********************************')
-        print 'N_clusters: ', k
-        print 'Local TP: ', k_stats['tp_local'].sum()
-        print 'Global TP: ', k_stats['tp_gub'].sum()
-        print 'Int TP: ', k_stats['tp_int'].sum()
-        print 'Ip2ip TP: ', k_stats['tp_ip2ip'].sum()
-        print 'Int Ip2ip TP: ', k_stats['tp_int_ip2ip'].sum()
+        fi.write('*********************************')
+        fi.write('\n')
+        fi.write('N_clusters: ' + str(k))
+        fi.write('\n')
+        fi.write('Local TP: ' + str(k_stats['tp_local'].sum()))
+        fi.write('\n')
+        fi.write('Global TP: ' + str(k_stats['tp_gub'].sum()))
+        fi.write('\n')
+        fi.write('Int TP: ' + str(k_stats['tp_int'].sum()))
+        fi.write('\n')
+        fi.write('Ip2ip TP: ' + str(k_stats['tp_ip2ip'].sum()))
+        fi.write('\n')
+        fi.write('Int Ip2ip TP: ' + str(k_stats['tp_int_ip2ip'].sum()))
+        fi.write('\n')
+        fi.write('\n')
+        fi.write('TP Improvement of global over local: ' + str(( k_stats['tp_impr_gub'].sum() / len(k_stats['tp_impr_gub']) )))
+        fi.write('\n')
+        fi.write('TP Improvement of intersection over local: ' + str(( k_stats['tp_impr_int'].sum() / len(k_stats['tp_impr_int']) )))
+        fi.write('\n')
+        fi.write('TP Improvement of ip2ip over local: ' + str((k_stats['tp_impr_ip2ip'].sum() / len(k_stats['tp_impr_ip2ip']) )))
+        fi.write('\n')
+        fi.write('TP Improvement of int ip2ip over local: ' + str((k_stats['tp_impr_int_ip2ip'].sum() / len(k_stats['tp_impr_int_ip2ip']) )))
         
-        print 'TP Improvement of global over local: ', ( k_stats['tp_impr_gub'].sum() / len(k_stats['tp_impr_gub']) )
-        print 'TP Improvement of intersection over local: ', ( k_stats['tp_impr_int'].sum() / len(k_stats['tp_impr_int']) )
-        print 'TP Improvement of ip2ip over local: ', (k_stats['tp_impr_ip2ip'].sum() / len(k_stats['tp_impr_ip2ip']) )
-        print 'TP Improvement of int ip2ip over local: ', (k_stats['tp_impr_int_ip2ip'].sum() / len(k_stats['tp_impr_int_ip2ip']) )
+        fi.write('\n')
+        fi.write('\n')
+        fi.write('-----------------------')
+        fi.write('\n')
         
-        print('-----------------------')
-        print 'Local FP: ', k_stats['fp_local'].sum()
-        print 'Global FP: ', k_stats['fp_gub'].sum()
-        print 'Int FP: ', k_stats['fp_int'].sum()
-        print 'Ip2ip FP: ', k_stats['fp_ip2ip'].sum()
-        print 'Int Ip2ip FP: ', k_stats['fp_int_ip2ip'].sum()
+        fi.write('Local FP: ' + str(k_stats['fp_local'].sum()))
+        fi.write('\n')
+        fi.write('Global FP: ' + str(k_stats['fp_gub'].sum()))
+        fi.write('\n')
+        fi.write('Int FP: ' + str(k_stats['fp_int'].sum()))
+        fi.write('\n')
+        fi.write('Ip2ip FP: ' + str(k_stats['fp_ip2ip'].sum()))
+        fi.write('\n')
+        fi.write('Int Ip2ip FP: ' + str(k_stats['fp_int_ip2ip'].sum()))
+        fi.write('\n')
+        fi.write('\n')
         
-        print 'FP Increase of global over local: ', (k_stats['fp_incr_gub'].sum() / len(k_stats['fp_incr_gub']) )
-        print 'FP Increase of intersection over local: ', (k_stats['fp_incr_int'].sum() / len(k_stats['fp_incr_int']) )
-        print 'FP Increase of ip2ip over local: ', (k_stats['fp_incr_ip2ip'].sum() / len(k_stats['fp_incr_ip2ip']) )
-        print 'FP Increase of int ip2ip over local: ', (k_stats['fp_incr_int_ip2ip'].sum() / len(k_stats['fp_incr_int_ip2ip']) )
+        fi.write('FP Increase of global over local: '  + str((k_stats['fp_incr_gub'].sum() / len(k_stats['fp_incr_gub']) )))
+        fi.write('\n')
+        fi.write('FP Increase of intersection over local: ' + str((k_stats['fp_incr_int'].sum() / len(k_stats['fp_incr_int']) )))
+        fi.write('\n')
+        fi.write('FP Increase of ip2ip over local: ' + str((k_stats['fp_incr_ip2ip'].sum() / len(k_stats['fp_incr_ip2ip']) )))
+        fi.write('\n')
+        fi.write('FP Increase of int ip2ip over local: ' + str((k_stats['fp_incr_int_ip2ip'].sum() / len(k_stats['fp_incr_int_ip2ip']) )))
+        fi.write('\n')
+        
+    fi.close()
         
 # compute jaccard similarity of two sets
 def jaccard_similarity(x, y):

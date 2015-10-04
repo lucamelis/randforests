@@ -29,8 +29,8 @@ for i in range(0, num_tests):
     start_day = logs_start_day + dt.timedelta(days=i)
 
     # load the window data into a dataframe
-    #window_logs = pd.read_pickle(data_dir + "sample.pkl")
-    window_logs = pd.read_pickle(data_dir + data_prefix + start_day.date().isoformat() + ".pkl")
+    window_logs = pd.read_pickle(data_dir + "sample.pkl")
+    #window_logs = pd.read_pickle(data_dir + data_prefix + start_day.date().isoformat() + ".pkl")
 
     #extract /24 subnets from IPs # TODO: we should play around with /16, /8 as well
     window_logs.src_ip = window_logs.src_ip.map(lambda x: x[:11])
@@ -96,17 +96,14 @@ for i in range(0, num_tests):
         # compute nearest neighbors based on the ip2ip matrix
         neighbors = NearestNeighbors(n_neighbors = k, algorithm = kNN_alg[1]).fit( o2o.sum(axis=2) )
         distances, indices = neighbors.kneighbors(o2o.sum(axis=2))
-
-        # pick 40 % percentile of distances
-        distance_threshold = np.percentile(distances, 40)
-        print 'Distance threshold is :', distance_threshold
         
         # dictionary storing for each contributor a list with its nearest neighbors
         org_neighbors = dict()
         for idx, x in enumerate(indices):
+            distance_threshold = np.percentile(distances[idx], 40)
             org_neighbors[reverse_ind_orgs[idx]] = [reverse_ind_orgs[y] for idy, y in enumerate(x) if distances[idx][idy] <= distance_threshold]
             #org_neighbors[reverse_ind_orgs[idx]] = [reverse_ind_orgs[y] for y in x ]
-
+        
         # global blacklist - this dictionary holds each contributor's global blacklist (i.e. the one generated from his cluster)
         gub_blacklists = dict()
 

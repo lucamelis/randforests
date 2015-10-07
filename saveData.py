@@ -3,13 +3,24 @@
 
 #comment
 from util import *
+import os
 
-do_feat_extraction = False
-#time window
-day = dt.datetime(2015,05,17)
-num_tests = 1
+#first day of logs
+start_day = dt.datetime(2015,02,13)
+
+#where to put the .pkl
+target_dir = "data/"
+
+#big archive
+archive = "data.7z"
+
+#do subsampling
+sample = True
+
+# number of consecutives time windows
+num_tests = 10
+
 train_window = 6
-
 stats_list = [ ]
 save_params = {
             "usecols": col_idx, #range(1,len(names)+1), 
@@ -17,13 +28,39 @@ save_params = {
             "sep": '\t' 
             }
 
-for i in range(0,num_tests):
-    start_day = day + dt.timedelta(days=i)
-    # df_logs = pd.read_csv(data_dir + "logs"+ start_day.date().isoformat()+".txt", **parser_params )
-    # print start_day.date().isoformat()
-        
-    df_logs = loadData(start_day, save_params)
 
-    df_logs.to_pickle(data_dir + "df_" + start_day.date().isoformat() +".pkl")
+def subsample(df_logs):
+    from collections import Counter
+    import operator
+    
+    head_k = 10
+    tail_k = 20
+    
+    logs_c = Counter(df_logs["target_ip"])    
+    xs, freqs = zip( *sorted( logs_c.items(), key=operator.itemgetter(1), reverse=True) )
+
+    return df_logs[ df_logs.target_ip.map(lambda x: x in xs[ head_k:-tail_k ]) ]
+
+
+#extract raw logs files
+for i in range(0,15):
+    cur_day = start_day + dt.timedelta(days=i)
+    os.system(r"7z x {} {} {}".format(archive, "df_{}.txt".format( cur_day.date.isoformat() ) , target_dir) )
+
+for i in range(0,num_tests):
+    cur_day = start_day + dt.timedelta(days=i)
+        
+    df_logs = loadData(cur_day, save_params)
+
+    if sample:
+        df_logs = subsample(df_logs)
+        fn = target_dir + "df_sample_" + cur_day.date().isoformat() +".pkl"
+    else:
+        fn = target_dir + "df_" + cur_day.date().isoformat() +".pkl"
+
+    df_logs.to_pickle(fn)
 
     del df_logs
+
+#delete all raw logs
+os.system( r"rm -rf {}df_*.txt".format(target_dir) )

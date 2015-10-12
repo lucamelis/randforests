@@ -12,7 +12,7 @@ start_day = dt.datetime(2015,02,13)
 target_dir = "data/"
 
 #big archive
-archive = "data.7z"
+archive = target_dir + "data.7z"
 
 #do subsampling
 sample = True
@@ -43,9 +43,9 @@ def subsample(df_logs):
 
 
 #extract raw logs files
-for i in range(0,15):
-    cur_day = start_day + dt.timedelta(days=i)
-    os.system(r"7z x {} {} {}".format(archive, "df_{}.txt".format( cur_day.date.isoformat() ) , target_dir) )
+#for i in range(0,15):
+#    cur_day = start_day + dt.timedelta(days=i)
+#    os.system(r"7za x {} {} {}".format(archive, "logs{}.txt".format( cur_day.date().isoformat() ) , target_dir) )
 
 for i in range(0,num_tests):
     cur_day = start_day + dt.timedelta(days=i)
@@ -63,4 +63,4 @@ for i in range(0,num_tests):
     del df_logs
 
 #delete all raw logs
-os.system( r"rm -rf {}df_*.txt".format(target_dir) )
+#os.system( r"rm -rf {}df_*.txt".format(target_dir) )

@@ -10,6 +10,7 @@ import pandas as pd
 import datetime as dt
 import re
 from itertools import combinations, product
+from collections import Counter
 
 from sklearn import ensemble, feature_extraction, preprocessing, cross_validation, metrics
 from sklearn.neighbors import NearestNeighbors
@@ -139,7 +140,7 @@ num_tests = 1
 train_window = 6
 
 names = np.array(["ID","D","time","src_ip","src_prt","target_prt","prot","flag","target_ip"])
-col_idx =[1,3,4,5,8]
+col_idx =[1,2,3,4,5,8]
 #training features
 # categorical = ["target_ip","flag", "prot", "src_prt","target_prt"]
 

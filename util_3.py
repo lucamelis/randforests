@@ -14,7 +14,7 @@ logs_start_day = dt.datetime.strptime("2015-05-17", '%Y-%m-%d')
 num_tests = 1 # TODO: this should be 10 for the actual experiments
 window_length = 6
 
-data_dir = 'data/' # directory where the data are stored 
+data_dir = 'data/experiments-dataset/' # directory where the data are stored 
 data_prefix = 'df_sample_'
 
 def getHeavyHitters(attackers,tau):
@@ -176,6 +176,10 @@ def compute_stats(method, stats):
         fi.write('\n')
         fi.write('N_clusters: ' + str(k))
         fi.write('\n')
+        fi.write('*********************************')
+        fi.write('\n')
+        fi.write('---------------------TP---------------')
+        fi.write('\n')
         fi.write('Local TP: ' + str(k_stats['tp_local'].sum()))
         fi.write('\n')
         fi.write('Global TP: ' + str(k_stats['tp_gub'].sum()))
@@ -186,18 +190,32 @@ def compute_stats(method, stats):
         fi.write('\n')
         fi.write('Int Ip2ip TP: ' + str(k_stats['tp_int_ip2ip'].sum()))
         fi.write('\n')
-        fi.write('\n')
-        fi.write('TP Improvement of global over local: ' + str(( k_stats['tp_impr_gub'].sum() / len(k_stats['tp_impr_gub']) )))
-        fi.write('\n')
-        fi.write('TP Improvement of intersection over local: ' + str(( k_stats['tp_impr_int'].sum() / len(k_stats['tp_impr_int']) )))
-        fi.write('\n')
-        fi.write('TP Improvement of ip2ip over local: ' + str((k_stats['tp_impr_ip2ip'].sum() / len(k_stats['tp_impr_ip2ip']) )))
-        fi.write('\n')
-        fi.write('TP Improvement of int ip2ip over local: ' + str((k_stats['tp_impr_int_ip2ip'].sum() / len(k_stats['tp_impr_int_ip2ip']) )))
         
+        fi.write('-----------Stats----------')
+        fi.write('\n')        
+        fi.write('TP Improvement of global over local: Mean | Std | Max | Min ' + str( k_stats['tp_impr_gub'].mean() ) + '|' + str( k_stats['tp_impr_gub'].std() ) + '|' 
+        + str( k_stats['tp_impr_gub'].max() ) + '|' + str( k_stats['tp_impr_gub'].min() ))
         fi.write('\n')
+        
+        fi.write('-----------------------------')    
+        fi.write('\n')    
+        fi.write('TP Improvement of intersection over local: Mean | Std | Max | Min ' + str( k_stats['tp_impr_int'].mean()) + '|' + str( k_stats['tp_impr_int'].std() ) 
+        + '|' + str( k_stats['tp_impr_int'].max() ) + '|' + str( k_stats['tp_impr_int'].min() ))
         fi.write('\n')
-        fi.write('-----------------------')
+        
+        fi.write('-----------------------------')  
+        fi.write('\n')      
+        fi.write('TP Improvement of ip2ip over local: Mean | Std | Max | Min ' + str(k_stats['tp_impr_ip2ip'].mean()) + '|' + str(k_stats['tp_impr_ip2ip'].std())
+        + '|' + str(k_stats['tp_impr_ip2ip'].max()) + '|' + str(k_stats['tp_impr_ip2ip'].min()))
+        fi.write('\n')
+        
+        fi.write('-----------------------------')        
+        fi.write('\n')
+        fi.write('TP Improvement of int ip2ip over local: Mean | Std | Max | Min ' + str(k_stats['tp_impr_int_ip2ip'].mean() ) + '|' + str(k_stats['tp_impr_int_ip2ip'].std() )
+        + '|' + str(k_stats['tp_impr_int_ip2ip'].max() ) + '|' + str(k_stats['tp_impr_int_ip2ip'].min() ))
+        fi.write('\n')
+        
+        fi.write('-------------FP----------')
         fi.write('\n')
         
         fi.write('Local FP: ' + str(k_stats['fp_local'].sum()))
@@ -210,15 +228,29 @@ def compute_stats(method, stats):
         fi.write('\n')
         fi.write('Int Ip2ip FP: ' + str(k_stats['fp_int_ip2ip'].sum()))
         fi.write('\n')
+        
+        fi.write('-------------------------')
+        fi.write('\n')
+        fi.write('FP Increase of global over local: Mean | Std | Max | Min '  + str( k_stats['fp_incr_gub'].mean() ) + '|' + str( k_stats['fp_incr_gub'].std() ) + 
+        '|' + str( k_stats['fp_incr_gub'].max() ) + '|' + str( k_stats['fp_incr_gub'].min() ))
         fi.write('\n')
         
-        fi.write('FP Increase of global over local: '  + str((k_stats['fp_incr_gub'].sum() / len(k_stats['fp_incr_gub']) )))
+        fi.write('-------------------------')
         fi.write('\n')
-        fi.write('FP Increase of intersection over local: ' + str((k_stats['fp_incr_int'].sum() / len(k_stats['fp_incr_int']) )))
+        fi.write('Avg FP Increase of intersection over local: Mean | Std | Max | Min ' + str(k_stats['fp_incr_int'].mean()) + '|' + str(k_stats['fp_incr_int'].std()) + '|' + 
+        str(k_stats['fp_incr_int'].max()) + '|' + str(k_stats['fp_incr_int'].min()))
         fi.write('\n')
-        fi.write('FP Increase of ip2ip over local: ' + str((k_stats['fp_incr_ip2ip'].sum() / len(k_stats['fp_incr_ip2ip']) )))
+        
+        fi.write('-------------------------')
         fi.write('\n')
-        fi.write('FP Increase of int ip2ip over local: ' + str((k_stats['fp_incr_int_ip2ip'].sum() / len(k_stats['fp_incr_int_ip2ip']) )))
+        fi.write('Avg FP Increase of ip2ip over local: Mean | Std | Max | Min ' + str(k_stats['fp_incr_ip2ip'].mean() ) + '|' + str(k_stats['fp_incr_ip2ip'].std() ) + '|' +
+        str(k_stats['fp_incr_ip2ip'].max() ) + '|' + str(k_stats['fp_incr_ip2ip'].min() ))
+        fi.write('\n')
+        
+        fi.write('-------------------------')
+        fi.write('\n')
+        fi.write('Avg FP Increase of int ip2ip over local: Mean | Std | Max | Min ' + str(k_stats['fp_incr_int_ip2ip'].mean()) + '|' + str(k_stats['fp_incr_int_ip2ip'].std() ) +
+         '|' + str(k_stats['fp_incr_int_ip2ip'].max()) + '|' + str(k_stats['fp_incr_int_ip2ip'].min()))
         fi.write('\n')
         
     fi.close()

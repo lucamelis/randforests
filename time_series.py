@@ -23,11 +23,12 @@ def local_prediction(top_targets, train_set, window):
     binary_mat = dict()
     prediction = dict()
     blacklist = dict()
+    whitelist = dict()
     binary_mat = binary_matrix(top_targets, train_set, window)
     prediction = local_score_prediction(binary_mat)
-    blacklist = local_blacklist(prediction)
+    blacklist, whitelist = local_blacklist(prediction)
     
-    return blacklist
+    return blacklist, whitelist
 
 # compute the binary matrix required for EWMA
 def binary_matrix(targets, train_set, window):
@@ -75,6 +76,7 @@ def local_score_prediction(binary_matrix):
 def local_blacklist(predictions):
     
     local_blacklists = dict()
+    local_whitelists = dict()
     
     # for every contributor
     for victim in predictions:
@@ -82,8 +84,10 @@ def local_blacklist(predictions):
         # get those attackers that have scored above the threshold
         l = [(k, v) for k, v in predictions[victim].iteritems() if v >= ewma_threshold]
         local_blacklists[victim] = set([w[0] for w in l])
+        m = [(k, v) for k, v in predictions[victim].iteritems() if v < ewma_threshold]
+        local_whitelists[victim] = set([z[0] for z in m])
                         
-    return local_blacklists    
+    return local_blacklists, local_whitelists    
 
 # ewma weight generation
 def compute_weights(a, N):

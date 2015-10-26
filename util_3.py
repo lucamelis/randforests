@@ -107,9 +107,10 @@ def combined_int_ip2ip_prediction(int_blacklist, ip2ip_blacklist):
     return int_blacklist | ip2ip_blacklist
 
 # compute some prediction stats
-def verify_prediction(local_blacklist, gub_blacklist, int_blacklist, ip2ip_blacklist, int_ip2ip_blacklist, ground_truth):
+def verify_prediction(local_blacklist, local_whitelist, gub_blacklist, int_blacklist, ip2ip_blacklist, int_ip2ip_blacklist, ground_truth):
 
     assert type(local_blacklist) is set
+    assert type(local_whitelist) is set
     assert type(gub_blacklist) is set
     assert type(int_blacklist) is set
     assert type(ip2ip_blacklist) is set
@@ -119,6 +120,8 @@ def verify_prediction(local_blacklist, gub_blacklist, int_blacklist, ip2ip_black
     d = {}
     d["tp_local"] = len( local_blacklist & ground_truth )
     d["fp_local"] = len( local_blacklist - ground_truth )
+    d["fn_local"] = len( local_whitelist & ground_truth )
+    d["tn_local"] = len( local_whitelist - ground_truth )
     
     d["tp_gub"] = len( gub_blacklist & ground_truth )
     d["fp_gub"] = len( gub_blacklist - ground_truth )

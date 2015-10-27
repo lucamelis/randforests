@@ -201,6 +201,34 @@ def plot_fpr(method, stats):
 
     plt.savefig(method + '-FPR.pdf')
     plt.close()
+
+def plot_precision(method, stats):
+    k_values = []
+    local_pr = []; gub_pr = []; int_pr = []; ip2ip_pr = []; int_ip2ip_pr = []
+    
+    for k in np.unique(stats["n_clusters"]):
+        if k!=0:
+            k_stats = stats[stats.n_clusters == k]
+            k_values.append(k)
+            local_pr.append(k_stats['tp_local'].sum() / float(k_stats['tp_local'].sum() + k_stats['fp_local'].sum())) 
+            gub_pr.append(k_stats['tp_gub'].sum() / float(k_stats['tp_gub'].sum() + k_stats['fp_gub'].sum()))
+            int_pr.append(k_stats['tp_int'].sum() / float(k_stats['tp_int'].sum() + k_stats['fp_int'].sum()))
+            ip2ip_pr.append(k_stats['tp_ip2ip'].sum() / float(k_stats['tp_ip2ip'].sum() + k_stats['fp_ip2ip'].sum()))
+            int_ip2ip_pr.append(k_stats['tp_int_ip2ip'].sum() / float(k_stats['tp_int_ip2ip'].sum() + k_stats['fp_int_ip2ip'].sum()))
+            
+    plt.xlabel(method + ' k')
+    plt.ylabel('Precision (PPV)')
+
+    plt.plot(k_values, local_pr, 'm', label='Local', marker = 's')
+    plt.plot(k_values, gub_pr, 'r', label='Global', marker = '*')
+    plt.plot(k_values, int_pr, 'g', label='Intersection', marker = '.')
+    plt.plot(k_values, ip2ip_pr, 'y', label='Ip2Ip', marker = '+')
+    plt.plot(k_values, int_ip2ip_pr, 'b', label='Ip2Ip + Intersection', marker = 'o')
+
+    legend = plt.legend(loc='upper right', fontsize='x-small') 
+
+    plt.savefig(method + '-PPV.pdf')
+    plt.close()
             
 def plot_avg_cluster_size(method, stats):
     
@@ -231,12 +259,8 @@ def plot_avg_cluster_size(method, stats):
 # compute the aggregated stats 
 def plot_true_positives(method, stats):
     
-    k_values = []
-    local_tp = []
-    gub_tp = []
-    int_tp = []
-    ip2ip_tp = []
-    int_ip2ip_tp = []
+    k_values = []; 
+    local_tp = []; gub_tp = []; int_tp = []; ip2ip_tp = []; int_ip2ip_tp = []
     
     for k in np.unique(stats["n_clusters"]):
         if k!= 0:
@@ -270,11 +294,7 @@ def plot_true_positives(method, stats):
 def plot_false_positives(method, stats):
         
     k_values = []
-    local_fp = []
-    gub_fp = []
-    int_fp = []
-    ip2ip_fp = []
-    int_ip2ip_fp = []
+    local_fp = []; gub_fp = []; int_fp = []; ip2ip_fp = []; int_ip2ip_fp = []
     
     for k in np.unique(stats["n_clusters"]):
         if k!= 0:
@@ -308,10 +328,7 @@ def plot_false_positives(method, stats):
 def plot_tp_improvement(method, stats):
     
     k_values = []
-    gub_tp_impr = []
-    int_tp_impr = []
-    ip2ip_tp_impr = []
-    int_ip2ip_tp_impr = []
+    gub_tp_impr = []; int_tp_impr = []; ip2ip_tp_impr = []; int_ip2ip_tp_impr = []
     
     for k in np.unique(stats["n_clusters"]):
         if k!= 0 :
@@ -341,10 +358,7 @@ def plot_tp_improvement(method, stats):
 def plot_fp_increase(method, stats):
     
     k_values = []
-    gub_fp_impr = []
-    int_fp_impr = []
-    ip2ip_fp_impr = []
-    int_ip2ip_fp_impr = []
+    gub_fp_impr = []; int_fp_impr = []; ip2ip_fp_impr = []; int_ip2ip_fp_impr = []
     
     for k in np.unique(stats["n_clusters"]):
         if k!= 0 :
@@ -386,3 +400,4 @@ plot_tp_improvement(alg, df)
 plot_fp_increase(alg, df)
 plot_tpr(alg, df)
 plot_fpr(alg, df)
+plot_precision(alg, df)

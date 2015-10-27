@@ -101,6 +101,48 @@ def compute_file_stats(method, stats):
         
     fi.close()
 
+# compute true positive rate and false positive rate for each k and log sharing method
+def compute_tpr_fpr(method, stats):
+    
+    fi = open(method +'_tpr_fpr_stats.txt', 'w')
+    
+    for k in np.unique(stats["n_clusters"]):
+        
+        k_stats = stats[stats.n_clusters == k]
+        
+        fi.write('*********************************')
+        fi.write('\n')
+        fi.write('N_clusters: ' + str(k))
+        fi.write('\n')
+        fi.write('---------------------TPR---------------')
+        fi.write('\n')
+        fi.write('Local TPR: ' + str( k_stats['tp_local'].sum() / float(k_stats['tp_local'].sum() + k_stats['fn_local'].sum()) ))
+        fi.write('\n')
+        fi.write('Global TPR: ' + str( k_stats['tp_gub'].sum() / float(k_stats['tp_gub'].sum() + k_stats['fn_local'].sum()) ))
+        fi.write('\n')
+        fi.write('Int TPR: ' + str( k_stats['tp_int'].sum() / float(k_stats['tp_int'].sum() + k_stats['fn_local'].sum()) ))
+        fi.write('\n')
+        fi.write('Ip2ip TPR: ' + str( k_stats['tp_ip2ip'].sum() / float(k_stats['tp_ip2ip'].sum() + k_stats['fn_local'].sum()) ))
+        fi.write('\n')
+        fi.write('Int Ip2ip TPR: ' + str( k_stats['tp_int_ip2ip'].sum() / float(k_stats['tp_int_ip2ip'].sum() + k_stats['fn_local'].sum()) ))
+        fi.write('\n')
+            
+        fi.write('-------------FPR----------')
+        fi.write('\n')
+        
+        fi.write('Local FPR: ' + str(k_stats['fp_local'].sum() / float(k_stats['fp_local'].sum() + k_stats['tn_local'].sum()) ))
+        fi.write('\n')
+        fi.write('Global FPR: ' + str(k_stats['fp_gub'].sum() / float(k_stats['fp_gub'].sum() + k_stats['tn_local'].sum()) ))
+        fi.write('\n')
+        fi.write('Int FPR: ' + str(k_stats['fp_int'].sum() / float(k_stats['fp_int'].sum() + k_stats['tn_local'].sum()) ))
+        fi.write('\n')
+        fi.write('Ip2ip FPR: ' + str(k_stats['fp_ip2ip'].sum() / float(k_stats['fp_ip2ip'].sum() + k_stats['tn_local'].sum()) ))
+        fi.write('\n')
+        fi.write('Int Ip2ip FPR: ' + str(k_stats['fp_int_ip2ip'].sum() / float(k_stats['fp_int_ip2ip'].sum() + k_stats['tn_local'].sum()) ))
+        fi.write('\n')
+                
+    fi.close()
+    
 def plot_avg_cluster_size(method, stats):
     
     k_values=[]
@@ -276,8 +318,9 @@ df = pd.read_pickle(data_dir)
 
 alg = 'KMeans'
 
-plot_avg_cluster_size(alg, df)
 compute_file_stats(alg, df)
+compute_tpr_fpr(alg, df)
+plot_avg_cluster_size(alg, df)
 plot_true_positives(alg, df)
 plot_false_positives(alg, df)
 plot_tp_improvement(alg, df)

@@ -143,6 +143,65 @@ def compute_tpr_fpr(method, stats):
                 
     fi.close()
     
+def plot_tpr(method, stats):
+    
+    k_values = []
+    local_tpr = []; gub_tpr = []; int_tpr = []; ip2ip_tpr = []; int_ip2ip_tpr = []
+    
+    for k in np.unique(stats["n_clusters"]):
+        if k!=0:
+            k_stats = stats[stats.n_clusters == k]
+            k_values.append(k)
+            local_tpr.append(k_stats['tp_local'].sum() / float(k_stats['tp_local'].sum() + k_stats['fn_local'].sum())) 
+            gub_tpr.append(k_stats['tp_gub'].sum() / float(k_stats['tp_gub'].sum() + k_stats['fn_local'].sum()))
+            int_tpr.append(k_stats['tp_int'].sum() / float(k_stats['tp_int'].sum() + k_stats['fn_local'].sum()))
+            ip2ip_tpr.append(k_stats['tp_ip2ip'].sum() / float(k_stats['tp_ip2ip'].sum() + k_stats['fn_local'].sum()))
+            int_ip2ip_tpr.append(k_stats['tp_int_ip2ip'].sum() / float(k_stats['tp_int_ip2ip'].sum() + k_stats['fn_local'].sum()))
+            
+    plt.xlabel(method + ' k')
+    plt.ylabel('True Positive Rate (TPR)')
+
+    plt.plot(k_values, local_tpr, 'm', label='Local', marker = 's')
+    plt.plot(k_values, gub_tpr, 'r', label='Global', marker = '*')
+    plt.plot(k_values, int_tpr, 'g', label='Intersection', marker = '.')
+    plt.plot(k_values, ip2ip_tpr, 'y', label='Ip2Ip', marker = '+')
+    plt.plot(k_values, int_ip2ip_tpr, 'b', label='Ip2Ip + Intersection', marker = 'o')
+
+    legend = plt.legend(loc='upper right', fontsize='x-small') 
+
+    #plt.show()
+    plt.savefig(method + '-TPR.pdf')
+    plt.close()        
+
+def plot_fpr(method, stats):            
+    
+    k_values = []
+    local_fpr = []; gub_fpr = []; int_fpr = []; ip2ip_fpr = []; int_ip2ip_fpr = []
+    
+    for k in np.unique(stats["n_clusters"]):
+        if k!=0:
+            k_stats = stats[stats.n_clusters == k]
+            k_values.append(k)
+            local_fpr.append(k_stats['fp_local'].sum() / float(k_stats['fp_local'].sum() + k_stats['tn_local'].sum())) 
+            gub_fpr.append(k_stats['fp_gub'].sum() / float(k_stats['fp_gub'].sum() + k_stats['tn_local'].sum()))
+            int_fpr.append(k_stats['fp_int'].sum() / float(k_stats['fp_int'].sum() + k_stats['tn_local'].sum()))
+            ip2ip_fpr.append(k_stats['fp_ip2ip'].sum() / float(k_stats['fp_ip2ip'].sum() + k_stats['tn_local'].sum()))
+            int_ip2ip_fpr.append(k_stats['fp_int_ip2ip'].sum() / float(k_stats['fp_int_ip2ip'].sum() + k_stats['tn_local'].sum()))
+            
+    plt.xlabel(method + ' k')
+    plt.ylabel('False Positive Rate (FPR)')
+
+    plt.plot(k_values, local_fpr, 'm', label='Local', marker = 's')
+    plt.plot(k_values, gub_fpr, 'r', label='Global', marker = '*')
+    plt.plot(k_values, int_fpr, 'g', label='Intersection', marker = '.')
+    plt.plot(k_values, ip2ip_fpr, 'y', label='Ip2Ip', marker = '+')
+    plt.plot(k_values, int_ip2ip_fpr, 'b', label='Ip2Ip + Intersection', marker = 'o')
+
+    legend = plt.legend(loc='upper right', fontsize='x-small') 
+
+    plt.savefig(method + '-FPR.pdf')
+    plt.close()
+            
 def plot_avg_cluster_size(method, stats):
     
     k_values=[]
@@ -325,3 +384,5 @@ plot_true_positives(alg, df)
 plot_false_positives(alg, df)
 plot_tp_improvement(alg, df)
 plot_fp_increase(alg, df)
+plot_tpr(alg, df)
+plot_fpr(alg, df)

@@ -28,7 +28,6 @@ save_params = {
             "sep": '\t' 
             }
 
-
 def subsample(df_logs):
     from collections import Counter
     import operator

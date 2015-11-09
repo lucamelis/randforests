@@ -31,7 +31,7 @@ def getHeavyHitters(attackers,tau):
     ps /= ps[-1]
     index = bisect.bisect_left(ps, tau)
     return np.array( xs[: index if index>0 else 1] )
-      
+ 
 # compute the Pearson correlation between 2 contributors
 def compute_pearson( df1, df2 ):
     
